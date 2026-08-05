@@ -1,0 +1,82 @@
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* ===== Travel 品牌色彩体系 ===== */
+:root,
+:root[data-theme='light'] {
+  --app-primary: #0ea5e9;
+  --app-primary-hover: #0284c7;
+  --app-accent: #f97316;
+  --app-accent-hover: #ea580c;
+  --app-bg: #f8fafc;
+  --app-bg-gradient: linear-gradient(180deg, #f0f9ff 0%, #f8fafc 40%, #fef7ed 100%);
+  --app-sider-bg: #f1f5f9;
+  --app-sider-hover: #e2e8f0;
+  --app-sider-active: #e0f2fe;
+  --app-input-bg: #ffffff;
+  --app-bubble-bg: #ffffff;
+  --app-header-bg: rgba(255, 255, 255, 0.85);
+  --app-text: #1e293b;
+  --app-text-secondary: #64748b;
+  --app-text-muted: #94a3b8;
+  --app-border: #e2e8f0;
+  --app-hover-bg: #f1f5f9;
+  --app-active-bg: #e0f2fe;
+  --app-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --app-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+/* ===== 深色模式 ===== */
+:root[data-theme='dark'] {
+  --app-primary: #38bdf8;
+  --app-primary-hover: #7dd3fc;
+  --app-accent: #fb923c;
+  --app-accent-hover: #fdba74;
+  --app-bg: #0b1120;
+  --app-bg-gradient: linear-gradient(180deg, #0f172a 0%, #0b1120 40%, #1a1020 100%);
+  --app-sider-bg: #0f172a;
+  --app-sider-hover: #1e293b;
+  --app-sider-active: #1e3a5f;
+  --app-input-bg: #1e293b;
+  --app-bubble-bg: #1e293b;
+  --app-header-bg: rgba(11, 17, 32, 0.9);
+  --app-text: rgba(255, 255, 255, 0.92);
+  --app-text-secondary: #94a3b8;
+  --app-text-muted: #64748b;
+  --app-border: #1e293b;
+  --app-hover-bg: #1e293b;
+  --app-active-bg: #1e3a5f;
+  --app-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --app-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Microsoft YaHei', sans-serif;
+  font-size: 15px;
+  background: var(--app-bg-gradient);
+  background-attachment: fixed;
+  color: var(--app-text);
+  transition: background 0.4s ease, color 0.3s ease;
+}
+
+/* 全局滚动条 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--app-text-muted);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--app-text-secondary);
+}

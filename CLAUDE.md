@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 项目概述
 
-旅游出行智能体（Travel Agent）。后端（Spring Boot 3.4 + LangChain4j，代码在本目录根 `src/`），前端（Vue3 + Ant Design Vue，在 `web/`）。后端用 LangChain4j `AiServices` 把 LLM、工具、记忆、RAG 组装为单一 `TravelAgent` 接口；M1（对话）/ M2（工具）/ M3（RAG）端到端已验证打通。
+旅游出行智能体（Travel Agent）。后端（Spring Boot 3.4 + LangChain4j，代码在本目录根 `src/`），前端（Vue3 + Ant Design Vue，在 `travel-web/`）。后端用 LangChain4j `AiServices` 把 LLM、工具、记忆、RAG 组装为单一 `TravelAgent` 接口；M1（对话）/ M2（工具）/ M3（RAG）端到端已验证打通。
 
-> **文档结构**：本文件覆盖**项目整体 + 后端**（后端代码在本目录根，故项目级与后端指南合一）。前端开发指南见 [`web/CLAUDE.md`](web/CLAUDE.md)。
+> **文档结构**：本文件覆盖**项目整体 + 后端**（后端代码在本目录根，故项目级与后端指南合一）。前端开发指南见 [`travel-web/CLAUDE.md`](travel-web/CLAUDE.md)。
 
 ## 环境约束（非显而易见，务必遵守）
 
@@ -28,7 +28,7 @@ mvn test                          # 全部单元测试
 mvn -Dtest=类名#方法名 test        # 跑单个测试
 ```
 
-### 前端（在 `travel-agent/web/`）
+### 前端（在 `travel-agent/travel-web/`）
 
 ```bash
 npm install
@@ -39,7 +39,7 @@ npm run build        # 生产构建（含类型检查）
 
 ### 前后端联调
 
-前端 `web/vite.config.ts` 配了 vite proxy：`/api` → `http://localhost:8080`，开发期无需 CORS。先起后端（8080）再起前端（5173）。
+前端 `travel-web/vite.config.ts` 配了 vite proxy：`/api` → `http://localhost:8080`，开发期无需 CORS。先起后端（8080）再起前端（5173）。
 
 ## 后端架构（big picture）
 
@@ -62,9 +62,9 @@ DDD 包分层，`com.travel.agent`：
 
 一期用 **`InMemoryEmbeddingStore`**（进程内，零依赖，无需 Docker/Milvus）。二期切 Milvus 只改 `EmbeddingStoreConfig.embeddingStore()` 一个 `@Bean`，其余代码依赖 `EmbeddingStore` 抽象，无需改动。
 
-## 前端（`web/`）
+## 前端（`travel-web/`）
 
-Vue3 + TypeScript + Pinia + Ant Design Vue 4，位于 `web/`。**完整前端开发指南见 [`web/CLAUDE.md`](web/CLAUDE.md)**。要点：vite proxy `/api`→8080 免跨域；Pinia 按 `userId` 隔离会话（不可变更新）；`request<T>()` 泛型脱壳 `ApiResult`（不在 axios 拦截器脱壳，否则 TS 报错）。
+Vue3 + TypeScript + Pinia + Ant Design Vue 4，位于 `travel-web/`。**完整前端开发指南见 [`travel-web/CLAUDE.md`](travel-web/CLAUDE.md)**。要点：vite proxy `/api`→8080 免跨域；Pinia 按 `userId` 隔离会话（不可变更新）；`request<T>()` 泛型脱壳 `ApiResult`（不在 axios 拦截器脱壳，否则 TS 报错）。
 
 ## LangChain4j 1.17 API 约定（踩坑记录，勿用旧路径）
 

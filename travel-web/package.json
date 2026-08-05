@@ -1,9 +1,9 @@
 {
-  "name": "travel-agent-web",
+  "name": "travel-web",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "旅游出行智能体 - 配套 Web 前端（Vue3 + Ant Design Vue）",
+  "description": "Travel - 旅游出行智能体 Web 前端（Vue3 + Ant Design Vue）",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",

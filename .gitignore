@@ -40,7 +40,7 @@ application-local.yml
 
 ### 前端依赖与构建产物 ###
 node_modules/
-web/dist/
+travel-web/dist/
 
 ### superpowers SDD 工作区（scratch）###
 .superpowers/

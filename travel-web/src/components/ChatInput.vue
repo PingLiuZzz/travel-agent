@@ -1,0 +1,127 @@
+<script setup lang="ts">
+import { computed, nextTick, ref, watch } from 'vue'
+import { SendOutlined } from '@ant-design/icons-vue'
+
+const props = defineProps<{ disabled?: boolean; modelValue?: string }>()
+const emit = defineEmits<{
+  send: [content: string]
+  'update:modelValue': [value: string]
+}>()
+
+const inputValue = ref('')
+const inputRef = ref<{ focus: () => void } | null>(null)
+
+// 外部填入编辑文本时同步
+watch(
+  () => props.modelValue,
+  val => {
+    if (val) {
+      inputValue.value = val
+      nextTick(() => inputRef.value?.focus())
+    }
+  },
+)
+
+const canSend = computed(() => inputValue.value.trim().length > 0 && !props.disabled)
+
+function handleSend(): void {
+  if (!canSend.value) return
+  const text = inputValue.value.trim()
+  inputValue.value = ''
+  emit('update:modelValue', '')
+  emit('send', text)
+  nextTick(() => inputRef.value?.focus())
+}
+</script>
+
+<template>
+  <div class="chat-input">
+    <div class="input-wrapper">
+      <a-textarea
+        ref="inputRef"
+        v-model:value="inputValue"
+        :disabled="disabled"
+        :auto-size="{ minRows: 1, maxRows: 5 }"
+        placeholder="输入你的旅行计划，例如：帮我规划下周深圳到北京的三天旅行"
+        @press-enter="handleSend"
+      />
+      <button
+        class="send-btn"
+        :class="{ active: canSend }"
+        :disabled="!canSend"
+        @click="handleSend"
+      >
+        <SendOutlined />
+      </button>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.chat-input {
+  padding: 16px 24px;
+  border-top: 1px solid var(--app-border);
+  background: var(--app-header-bg);
+  backdrop-filter: blur(12px);
+  transition: background 0.3s ease;
+}
+
+.input-wrapper {
+  max-width: 800px;
+  margin: 0 auto;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  background: var(--app-input-bg);
+  border: 1px solid var(--app-border);
+  border-radius: 14px;
+  padding: 10px 14px;
+  box-shadow: var(--app-shadow);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.input-wrapper:focus-within {
+  border-color: var(--app-primary);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+}
+
+:deep(.ant-input) {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  padding: 4px 0;
+  font-size: 16px;
+  line-height: 1.65;
+  resize: none;
+  color: var(--app-text);
+}
+:deep(.ant-input::placeholder) {
+  color: var(--app-text-muted);
+}
+
+.send-btn {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 10px;
+  background: var(--app-border);
+  color: var(--app-text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 10px;
+  font-size: 16px;
+}
+.send-btn.active {
+  background: var(--app-primary);
+  color: #fff;
+}
+.send-btn.active:hover {
+  background: var(--app-primary-hover);
+}
+.send-btn:disabled {
+  cursor: not-allowed;
+}
+</style>
