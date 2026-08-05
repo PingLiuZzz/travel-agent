@@ -11,8 +11,7 @@ import org.springframework.context.annotation.Configuration;
 /**
  * 向量存储与检索器装配。
  *
- * <p>一期采用 InMemoryEmbeddingStore（进程内内存向量库，零外部依赖），
- * 便于无 Docker 环境快速跑通 RAG 端到端流程。
+ * <p>一期采用 InMemoryEmbeddingStore（进程内内存向量库，零外部依赖）， 便于无 Docker 环境快速跑通 RAG 端到端流程。
  *
  * <p>二期切换 Milvus：仅需将 embeddingStore() 实现替换为
  * MilvusEmbeddingStore.builder().host().port().collectionName().dimension().build()，
@@ -21,20 +20,20 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class EmbeddingStoreConfig {
 
-    @Bean
-    public EmbeddingStore<TextSegment> embeddingStore() {
-        return new InMemoryEmbeddingStore<>();
-    }
+  @Bean
+  public EmbeddingStore<TextSegment> embeddingStore() {
+    return new InMemoryEmbeddingStore<>();
+  }
 
-    @Bean
-    public EmbeddingStoreContentRetriever contentRetriever(
-            EmbeddingStore<TextSegment> embeddingStore,
-            EmbeddingModel embeddingModel,
-            TravelAiProperties properties) {
-        return EmbeddingStoreContentRetriever.builder()
-                .embeddingStore(embeddingStore)
-                .embeddingModel(embeddingModel)
-                .maxResults(properties.getRag().getTopK())
-                .build();
-    }
+  @Bean
+  public EmbeddingStoreContentRetriever contentRetriever(
+      EmbeddingStore<TextSegment> embeddingStore,
+      EmbeddingModel embeddingModel,
+      TravelAiProperties properties) {
+    return EmbeddingStoreContentRetriever.builder()
+        .embeddingStore(embeddingStore)
+        .embeddingModel(embeddingModel)
+        .maxResults(properties.getRag().getTopK())
+        .build();
+  }
 }

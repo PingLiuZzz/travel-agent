@@ -5,14 +5,15 @@ export type MessageRole = 'user' | 'assistant'
 
 /** 单条对话消息 */
 export interface ChatMessage {
+  id: number
   role: MessageRole
   content: string
   createTime: string
 }
 
-/** 对话请求（对应后端 ChatRequest） */
+/** 对话请求（对应后端 ChatRequest）；userId 可空，为空表示新建会话 */
 export interface ChatRequest {
-  userId: string
+  userId?: string
   message: string
 }
 
@@ -26,11 +27,27 @@ export interface ApiResult<T> {
 /** 对话响应载荷（对应后端 ChatResponse） */
 export interface ChatResponse {
   reply: string
+  sessionId: string
 }
 
-/** 会话（前端维护，userId 作为多用户隔离标识） */
-export interface Session {
+/** 会话视图（对应后端 ChatSessionVo） */
+export interface ChatSessionVo {
   userId: string
   title: string
   lastMessage: string
+  createTime: string
+  updateTime: string
+}
+
+/** 消息视图（对应后端 ChatMessageVo） */
+export interface ChatMessageVo {
+  id: number
+  role: MessageRole
+  content: string
+  createTime: string
+}
+
+/** 重命名请求 */
+export interface RenameSessionRequest {
+  title: string
 }

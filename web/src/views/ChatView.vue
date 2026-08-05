@@ -24,10 +24,7 @@ function handleSend(content: string): void {
 }
 
 onMounted(() => {
-  // 首次进入若无会话，自动建一个
-  if (store.sessions.length === 0) {
-    store.createSession()
-  }
+  store.init()
 })
 </script>
 
@@ -35,7 +32,7 @@ onMounted(() => {
   <div class="chat-view">
     <!-- 左：会话列表 -->
     <aside class="sessions">
-      <a-button type="primary" block @click="store.createSession()">
+      <a-button type="primary" block @click="store.newChat()">
         <template #icon><PlusOutlined /></template>
         新建会话
       </a-button>
@@ -71,8 +68,8 @@ onMounted(() => {
           class="empty"
         />
         <MessageBubble
-          v-for="(msg, index) in store.activeMessages"
-          :key="index"
+          v-for="msg in store.activeMessages"
+          :key="msg.id"
           :message="msg"
           @regenerate="store.regenerate"
         />

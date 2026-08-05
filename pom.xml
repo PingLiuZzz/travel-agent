@@ -23,6 +23,7 @@
         <!-- 核心与主流集成已 GA(1.17.2)，部分扩展模块仍 beta(1.17.2-beta27)，故拆两个版本号 -->
         <langchain4j.version>1.17.2</langchain4j.version>
         <langchain4j-ext.version>1.17.2-beta27</langchain4j-ext.version>
+        <mybatis-plus.version>3.5.9</mybatis-plus.version>
     </properties>
 
     <dependencies>
@@ -30,6 +31,19 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- MyBatis-Plus（Spring Boot 3 专用 starter）：ORM 与 CRUD -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+            <version>${mybatis-plus.version}</version>
+        </dependency>
+        <!-- MySQL 驱动（版本由 Spring Boot 父 BOM 管理） -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <!-- 参数校验 -->

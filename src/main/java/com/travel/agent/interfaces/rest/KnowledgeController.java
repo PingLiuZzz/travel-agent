@@ -19,21 +19,21 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/knowledge")
 public class KnowledgeController {
 
-    private final KnowledgeIngestService knowledgeIngestService;
+  private final KnowledgeIngestService knowledgeIngestService;
 
-    @Autowired
-    public KnowledgeController(KnowledgeIngestService knowledgeIngestService) {
-        this.knowledgeIngestService = knowledgeIngestService;
-    }
+  @Autowired
+  public KnowledgeController(KnowledgeIngestService knowledgeIngestService) {
+    this.knowledgeIngestService = knowledgeIngestService;
+  }
 
-    /**
-     * 灌入知识库：解析文档 → 切分 → 向量化 → 存入 Milvus。
-     *
-     * @return 灌入的文本片段数
-     */
-    @PostMapping("/ingest")
-    public ApiResult<String> ingest(@Valid @RequestBody KnowledgeIngestRequest request) {
-        int segmentCount = knowledgeIngestService.ingest(request.getFilePath());
-        return ApiResult.success("已灌入 " + segmentCount + " 个文本片段");
-    }
+  /**
+   * 灌入知识库：解析文档 → 切分 → 向量化 → 存入 Milvus。
+   *
+   * @return 灌入的文本片段数
+   */
+  @PostMapping("/ingest")
+  public ApiResult<String> ingest(@Valid @RequestBody KnowledgeIngestRequest request) {
+    int segmentCount = knowledgeIngestService.ingest(request.getFilePath());
+    return ApiResult.success("已灌入 " + segmentCount + " 个文本片段");
+  }
 }

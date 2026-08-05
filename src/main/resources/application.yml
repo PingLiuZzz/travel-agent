@@ -3,6 +3,16 @@ spring:
     name: travel-agent
   profiles:
     active: dev,local
+  datasource:
+    # MySQL 连接（占位符；真实密码由 application-local.yml 覆盖，避免入仓）
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DB:travel_agent}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  sql:
+    init:
+      # 启动时执行 schema.sql 建表（IF NOT EXISTS，幂等）
+      mode: always
   servlet:
     multipart:
       max-file-size: 50MB   # 知识库文档上传大小限制
@@ -36,3 +46,8 @@ management:
     web:
       exposure:
         include: health,info,metrics
+
+# MyBatis-Plus：列名 user_id ↔ Java userId 自动驼峰映射
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true

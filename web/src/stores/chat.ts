@@ -1,67 +1,95 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { sendChat } from '@/api/chat'
-import type { ChatMessage, Session } from '@/types/chat'
+import {
+  deleteSession,
+  getSessionMessages,
+  getSessions,
+  renameSession,
+  sendChat,
+} from '@/api/chat'
+import type { ChatMessage, ChatSessionVo } from '@/types/chat'
+
+const CACHE_KEY = 'travel-agent:chat-state'
 
 /**
  * 对话状态管理（组合式 store）。
  *
  * 设计要点：
- * - 按 userId 存储消息（多会话隔离，切换不丢上下文）。
- * - 使用不可变更新（展开运算符）符合不可变数据偏好。
+ * - 后端为唯一真相源：会话列表来自 getSessions()，消息来自 getSessionMessages()。
+ * - localStorage 仅缓存已加载会话的消息，切换会话命中缓存免重复请求。
+ * - 新建对话：activeUserId 为空即新建态，首条消息发出后才落库（对标 DeepSeek）。
+ * - 不可变更新（展开运算符）。
  */
 export const useChatStore = defineStore('chat', () => {
-  const sessions = ref<Session[]>([])
+  const sessions = ref<ChatSessionVo[]>([])
   const activeUserId = ref<string>('')
-  // 按 userId 分组存储消息，切换会话不丢历史
-  const messagesByUser = ref<Record<string, ChatMessage[]>>({})
+  const messagesByUser = ref<Record<string, ChatMessage[]>>(loadCache())
   const loading = ref(false)
 
   const activeMessages = computed<ChatMessage[]>(
     () => messagesByUser.value[activeUserId.value] ?? [],
   )
 
-  /** 新建会话，返回生成的 userId */
-  function createSession(): string {
-    const userId = `u-${Date.now()}`
-    const newSession: Session = { userId, title: '新对话', lastMessage: '' }
-    sessions.value = [newSession, ...sessions.value]
-    activeUserId.value = userId
-    messagesByUser.value = { ...messagesByUser.value, [userId]: [] }
-    return userId
-  }
-
-  function selectSession(userId: string): void {
-    activeUserId.value = userId
-  }
-
-  /** 删除会话及其消息；若删的是当前会话，切到第一个或新建空会话 */
-  function removeSession(userId: string): void {
-    sessions.value = sessions.value.filter((session) => session.userId !== userId)
-    const rest = { ...messagesByUser.value }
-    delete rest[userId]
-    messagesByUser.value = rest
-    if (activeUserId.value === userId) {
-      activeUserId.value = sessions.value[0]?.userId ?? ''
-      if (sessions.value.length === 0) {
-        createSession()
+  /** 启动初始化：拉会话列表，默认选最近会话或进入新建态 */
+  async function init(): Promise<void> {
+    try {
+      const list = await getSessions()
+      sessions.value = list
+      if (list.length > 0) {
+        await selectSession(list[0].userId)
+      } else {
+        activeUserId.value = ''
       }
+    } catch {
+      // 后端不可用，保持空状态
     }
   }
 
-  /** 发送消息并接收智能体回复 */
-  async function sendMessage(content: string): Promise<void> {
-    if (!activeUserId.value) {
-      createSession()
-    }
-    const userId = activeUserId.value
-    appendMessage(userId, { role: 'user', content, createTime: now() })
+  /** 新建对话：只切到新建态，不落库（首条消息才创建会话） */
+  function newChat(): void {
+    activeUserId.value = ''
+  }
 
+  /** 切换会话；命中缓存则免请求 */
+  async function selectSession(userId: string): Promise<void> {
+    activeUserId.value = userId
+    if (messagesByUser.value[userId]) return
+    const messages = await getSessionMessages(userId)
+    messagesByUser.value = { ...messagesByUser.value, [userId]: messages }
+    persistCache()
+  }
+
+  /** 发送消息；新建态下首次发消息会建会话 */
+  async function sendMessage(content: string): Promise<void> {
+    const isNewChat = !activeUserId.value
+    const userId = activeUserId.value
     loading.value = true
     try {
-      const reply = await sendChat({ userId, message: content })
-      appendMessage(userId, { role: 'assistant', content: reply, createTime: now() })
-      updateSessionMeta(userId, content, reply)
+      const reply = await sendChat(userId ? { userId, message: content } : { message: content })
+      const sessionId = reply.sessionId
+      if (isNewChat) {
+        activeUserId.value = sessionId
+        const newSession: ChatSessionVo = {
+          userId: sessionId,
+          title: content.slice(0, 12),
+          lastMessage: reply.reply,
+          createTime: now(),
+          updateTime: now(),
+        }
+        sessions.value = [newSession, ...sessions.value]
+      } else {
+        sessions.value = sessions.value.map((session) =>
+          session.userId === sessionId ? { ...session, lastMessage: reply.reply } : session,
+        )
+      }
+      const list = messagesByUser.value[sessionId] ?? []
+      const appended: ChatMessage[] = [
+        ...list,
+        { id: Date.now(), role: 'user', content, createTime: now() },
+        { id: Date.now() + 1, role: 'assistant', content: reply.reply, createTime: now() },
+      ]
+      messagesByUser.value = { ...messagesByUser.value, [sessionId]: appended }
+      persistCache()
     } finally {
       loading.value = false
     }
@@ -80,43 +108,67 @@ export const useChatStore = defineStore('chat', () => {
       }
     }
     if (!lastUserContent) return
-    // 移除末尾的 assistant 消息（若有），保留历史
     const trimmed =
-      list.length > 0 && list[list.length - 1].role === 'assistant'
-        ? list.slice(0, -1)
-        : list
+      list.length > 0 && list[list.length - 1].role === 'assistant' ? list.slice(0, -1) : list
     messagesByUser.value = { ...messagesByUser.value, [userId]: trimmed }
 
     loading.value = true
     try {
       const reply = await sendChat({ userId, message: lastUserContent })
-      appendMessage(userId, { role: 'assistant', content: reply, createTime: now() })
-      updateSessionMeta(userId, lastUserContent, reply)
+      const appended = [
+        ...trimmed,
+        { id: Date.now(), role: 'assistant' as const, content: reply.reply, createTime: now() },
+      ]
+      messagesByUser.value = { ...messagesByUser.value, [userId]: appended }
+      sessions.value = sessions.value.map((session) =>
+        session.userId === userId ? { ...session, lastMessage: reply.reply } : session,
+      )
+      persistCache()
     } finally {
       loading.value = false
     }
   }
 
-  /** 不可变追加消息 */
-  function appendMessage(userId: string, message: ChatMessage): void {
-    const list = messagesByUser.value[userId] ?? []
-    messagesByUser.value = { ...messagesByUser.value, [userId]: [...list, message] }
+  /** 重命名会话 */
+  async function renameSessionWithTitle(userId: string, title: string): Promise<void> {
+    await renameSession(userId, title)
+    sessions.value = sessions.value.map((session) =>
+      session.userId === userId ? { ...session, title } : session,
+    )
   }
 
-  /** 更新会话标题（首条消息截断）与最后消息预览 */
-  function updateSessionMeta(userId: string, firstContent: string, lastReply: string): void {
-    sessions.value = sessions.value.map((session) => {
-      if (session.userId !== userId) return session
-      return {
-        ...session,
-        title: session.title === '新对话' ? firstContent.slice(0, 12) : session.title,
-        lastMessage: lastReply,
-      }
-    })
+  /** 删除会话及其消息 */
+  async function removeSession(userId: string): Promise<void> {
+    await deleteSession(userId)
+    sessions.value = sessions.value.filter((session) => session.userId !== userId)
+    const rest = { ...messagesByUser.value }
+    delete rest[userId]
+    messagesByUser.value = rest
+    persistCache()
+    if (activeUserId.value === userId) {
+      activeUserId.value = sessions.value[0]?.userId ?? ''
+    }
   }
 
   function now(): string {
     return new Date().toLocaleTimeString('zh-CN', { hour12: false })
+  }
+
+  function persistCache(): void {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(messagesByUser.value))
+    } catch {
+      // 存储满或不可用，忽略
+    }
+  }
+
+  function loadCache(): Record<string, ChatMessage[]> {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY)
+      return raw ? (JSON.parse(raw) as Record<string, ChatMessage[]>) : {}
+    } catch {
+      return {}
+    }
   }
 
   return {
@@ -124,10 +176,12 @@ export const useChatStore = defineStore('chat', () => {
     activeUserId,
     loading,
     activeMessages,
-    createSession,
+    init,
+    newChat,
     selectSession,
-    removeSession,
     sendMessage,
     regenerate,
+    renameSessionWithTitle,
+    removeSession,
   }
 })
