@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   BookOutlined,
@@ -12,6 +12,7 @@ import {
   PushpinFilled,
   PushpinOutlined,
   SearchOutlined,
+  SettingOutlined,
   ShareAltOutlined,
 } from '@ant-design/icons-vue'
 import { Monitor, Moon, Sun } from 'lucide-vue-next'
@@ -56,46 +57,36 @@ function handleDelete(userId: string): void {
   store.removeSession(userId)
 }
 
-function cycleTheme(): void {
-  const modes: ThemeMode[] = ['light', 'dark', 'system']
-  const idx = modes.indexOf(themeStore.mode)
-  themeStore.setMode(modes[(idx + 1) % modes.length])
-}
+const themeModes: ThemeMode[] = ['light', 'dark', 'system']
 
-const currentThemeIcon = computed(() => themeIconMap[themeStore.mode])
+const showSettingsModal = ref(false)
+
+/** 折叠态点击搜索：展开边栏并聚焦搜索框 */
+function openSearchFromCollapsed(): void {
+  store.sidebarCollapsed = false
+  // 等 sidebar 展开后聚焦 search input
+  setTimeout(() => {
+    const input = document.querySelector('.search-wrap input') as HTMLInputElement | null
+    input?.focus()
+  }, 300)
+}
 </script>
 
 <template>
   <aside class="sidebar" :class="{ collapsed: store.sidebarCollapsed }">
-    <!-- 折叠时：仅图标模式 -->
+    <!-- 折叠时：仅图标模式（logo + 展开 + 搜索 + 新旅程） -->
     <template v-if="store.sidebarCollapsed">
       <div class="collapsed-bar">
+        <CompassOutlined class="collapsed-logo" />
         <button class="icon-btn" title="展开边栏" @click="store.toggleSidebar()">
           <MenuUnfoldOutlined />
+        </button>
+        <button class="icon-btn" title="搜索会话" @click="openSearchFromCollapsed()">
+          <SearchOutlined />
         </button>
         <button class="icon-btn" title="新旅程" @click="store.newChat()">
           <CompassOutlined />
         </button>
-        <div class="collapsed-sessions">
-          <button
-            v-for="s in store.displayedSessions"
-            :key="s.userId"
-            class="icon-btn session-dot"
-            :class="{ active: s.userId === store.activeUserId }"
-            :title="s.title"
-            @click="store.selectSession(s.userId)"
-          >
-            {{ s.title.charAt(0) }}
-          </button>
-        </div>
-        <div class="collapsed-bottom">
-          <button class="icon-btn" :title="themeLabels[themeStore.mode]" @click="cycleTheme">
-            <component :is="currentThemeIcon" :size="16" />
-          </button>
-          <button class="icon-btn" title="知识库" @click="router.push('/knowledge')">
-            <BookOutlined />
-          </button>
-        </div>
       </div>
     </template>
 
@@ -193,22 +184,53 @@ const currentThemeIcon = computed(() => themeIconMap[themeStore.mode])
         </div>
       </div>
 
-      <!-- 底部设置区 -->
+      <!-- 底部设置区：系统设置按钮 -->
       <div class="sidebar-footer">
-        <div class="footer-row">
-          <!-- 主题切换 -->
-          <button class="footer-btn" @click="cycleTheme" :title="themeLabels[themeStore.mode]">
-            <component :is="currentThemeIcon" :size="15" />
-            <span>{{ themeLabels[themeStore.mode] }}</span>
-          </button>
-
-          <!-- 知识库 -->
-          <button class="footer-btn" @click="router.push('/knowledge')">
-            <BookOutlined />
-            <span>知识库</span>
-          </button>
-        </div>
+        <button class="footer-btn" @click="showSettingsModal = true">
+          <SettingOutlined />
+          <span>系统设置</span>
+        </button>
       </div>
+
+      <!-- 系统设置弹窗 -->
+      <a-modal
+        v-model:open="showSettingsModal"
+        title="系统设置"
+        :footer="null"
+        width="360px"
+        :z-index="1001"
+      >
+        <div class="settings-modal">
+          <!-- 主题设置 -->
+          <div class="settings-section">
+            <div class="settings-label">主题设置</div>
+            <div class="theme-options">
+              <button
+                v-for="opt in themeModes"
+                :key="opt"
+                class="theme-option"
+                :class="{ active: themeStore.mode === opt }"
+                @click="themeStore.setMode(opt)"
+              >
+                <component :is="themeIconMap[opt]" :size="18" />
+                <span>{{ themeLabels[opt] }}</span>
+              </button>
+            </div>
+          </div>
+
+          <a-divider />
+
+          <!-- 知识库管理 -->
+          <div class="settings-section">
+            <div class="settings-label">文档管理</div>
+            <button class="settings-link" @click="showSettingsModal = false; router.push('/knowledge')">
+              <BookOutlined />
+              <span>知识库管理</span>
+              <span class="settings-arrow">→</span>
+            </button>
+          </div>
+        </div>
+      </a-modal>
     </template>
   </aside>
 </template>
@@ -235,36 +257,13 @@ const currentThemeIcon = computed(() => themeIconMap[themeStore.mode])
   flex-direction: column;
   align-items: center;
   height: 100%;
-  padding: 12px 0;
-  gap: 8px;
+  padding: 14px 0;
+  gap: 10px;
 }
-.collapsed-sessions {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  width: 100%;
-  padding: 0 8px;
-}
-.session-dot {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-.session-dot.active {
-  background: var(--app-active-bg);
+.collapsed-logo {
+  font-size: 22px;
   color: var(--app-primary);
-}
-.collapsed-bottom {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  align-items: center;
+  margin-bottom: 6px;
 }
 
 /* 通用图标按钮 */
@@ -479,5 +478,74 @@ const currentThemeIcon = computed(() => themeIconMap[themeStore.mode])
 .footer-btn:hover {
   background: var(--app-hover-bg);
   color: var(--app-text);
+}
+
+/* ===== 系统设置弹窗 ===== */
+.settings-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.settings-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--app-text-secondary);
+}
+.theme-options {
+  display: flex;
+  gap: 8px;
+}
+.theme-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 8px;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--app-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.theme-option:hover {
+  border-color: var(--app-primary);
+  color: var(--app-text);
+}
+.theme-option.active {
+  border-color: var(--app-primary);
+  background: var(--app-active-bg);
+  color: var(--app-primary);
+  font-weight: 500;
+}
+.settings-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--app-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  width: 100%;
+  text-align: left;
+}
+.settings-link:hover {
+  border-color: var(--app-primary);
+  color: var(--app-text);
+}
+.settings-arrow {
+  margin-left: auto;
+  color: var(--app-text-muted);
 }
 </style>
