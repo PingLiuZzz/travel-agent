@@ -218,6 +218,7 @@ function openSearchFromCollapsed(): void {
       <!-- 系统设置弹窗（DeepSeek 左右分栏布局） -->
       <a-modal
         v-model:open="showSettingsModal"
+        title="系统设置"
         :footer="null"
         width="680px"
         :z-index="1001"
@@ -252,22 +253,19 @@ function openSearchFromCollapsed(): void {
             <template v-if="settingsTab === 'theme'">
               <div class="panel-title">主题设置</div>
               <p class="panel-desc">选择适合你的界面主题，设置即时生效。</p>
-              <div class="theme-list">
+              <div class="theme-cards">
                 <button
                   v-for="opt in themeModes"
                   :key="opt"
-                  class="theme-row"
+                  class="theme-card"
                   :class="{ active: themeStore.mode === opt }"
                   @click="themeStore.setMode(opt)"
                 >
-                  <component :is="themeIconMap[opt]" :size="20" />
-                  <div class="theme-row-text">
-                    <span class="theme-row-label">{{ themeLabels[opt] }}</span>
-                    <span class="theme-row-desc">
-                      {{ opt === 'light' ? '明亮清爽，适合日间使用' : opt === 'dark' ? '柔和护眼，适合夜间使用' : '跟随操作系统自动切换' }}
-                    </span>
-                  </div>
-                  <span v-if="themeStore.mode === opt" class="theme-check">✓</span>
+                  <component :is="themeIconMap[opt]" :size="28" />
+                  <span class="theme-card-label">{{ themeLabels[opt] }}</span>
+                  <span class="theme-card-desc">
+                    {{ opt === 'light' ? '明亮清爽' : opt === 'dark' ? '柔和护眼' : '自动切换' }}
+                  </span>
                 </button>
               </div>
             </template>
@@ -558,7 +556,12 @@ function openSearchFromCollapsed(): void {
   padding: 0;
 }
 :deep(.settings-modal-root .ant-modal-header) {
-  display: none;
+  border-bottom: 1px solid var(--app-border);
+  padding: 20px 24px;
+}
+:deep(.settings-modal-root .ant-modal-title) {
+  font-size: 17px;
+  font-weight: 600;
 }
 :deep(.settings-modal-root .ant-modal-body) {
   padding: 0;
@@ -566,7 +569,7 @@ function openSearchFromCollapsed(): void {
 
 .settings-layout {
   display: flex;
-  height: 420px;
+  height: 400px;
 }
 
 /* 左侧导航 */
@@ -631,53 +634,41 @@ function openSearchFromCollapsed(): void {
   line-height: 1.6;
 }
 
-/* 主题行列表 */
-.theme-list {
+/* 主题横向卡片 */
+.theme-cards {
+  display: flex;
+  gap: 12px;
+}
+.theme-card {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-}
-.theme-row {
-  display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 16px;
+  gap: 8px;
+  padding: 24px 12px;
   border: 2px solid var(--app-border);
-  border-radius: 12px;
+  border-radius: 14px;
   background: transparent;
   color: var(--app-text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
-  text-align: left;
 }
-.theme-row:hover {
+.theme-card:hover {
   border-color: var(--app-primary);
   background: var(--app-hover-bg);
 }
-.theme-row.active {
+.theme-card.active {
   border-color: var(--app-primary);
   background: var(--app-active-bg);
-  color: var(--app-text);
-}
-.theme-row-text {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.theme-row-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--app-text);
-}
-.theme-row-desc {
-  font-size: 12px;
-  color: var(--app-text-muted);
-}
-.theme-check {
-  font-size: 16px;
-  font-weight: 700;
   color: var(--app-primary);
+}
+.theme-card-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+.theme-card-desc {
+  font-size: 11px;
+  color: var(--app-text-muted);
 }
 
 /* 知识库面板表单 */
