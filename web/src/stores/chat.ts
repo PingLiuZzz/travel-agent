@@ -32,12 +32,16 @@ export const useChatStore = defineStore('chat', () => {
 
   /** 启动初始化：拉会话列表，默认选最近会话或进入新建态 */
   async function init(): Promise<void> {
-    const list = await getSessions()
-    sessions.value = list
-    if (list.length > 0) {
-      await selectSession(list[0].userId)
-    } else {
-      activeUserId.value = ''
+    try {
+      const list = await getSessions()
+      sessions.value = list
+      if (list.length > 0) {
+        await selectSession(list[0].userId)
+      } else {
+        activeUserId.value = ''
+      }
+    } catch {
+      // 后端不可用，保持空状态
     }
   }
 
