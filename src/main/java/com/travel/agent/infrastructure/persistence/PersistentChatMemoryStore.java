@@ -32,9 +32,10 @@ public class PersistentChatMemoryStore implements ChatMemoryStore {
   @Override
   public List<ChatMessage> getMessages(Object memoryId) {
     String userId = String.valueOf(memoryId);
-    return repository.findRecentByUserId(userId, maxMessages).stream()
-        .map(PersistentChatMemoryStore::toChatMessage)
-        .toList();
+    return new java.util.ArrayList<>(
+        repository.findRecentByUserId(userId, maxMessages).stream()
+            .map(PersistentChatMemoryStore::toChatMessage)
+            .toList());
   }
 
   @Override
