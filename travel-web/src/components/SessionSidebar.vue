@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 import {
-  BookOutlined,
+  CloudUploadOutlined,
   CompassOutlined,
   DeleteOutlined,
   EditOutlined,
   EllipsisOutlined,
+  FileTextOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   PushpinFilled,
@@ -15,15 +15,16 @@ import {
   SettingOutlined,
   ShareAltOutlined,
 } from '@ant-design/icons-vue'
+import { message } from 'ant-design-vue'
 import { Monitor, Moon, Sun } from 'lucide-vue-next'
 import type { Component } from 'vue'
+import { ingestDocument } from '@/api/knowledge'
 import { useChatStore } from '@/stores/chat'
 import { useThemeStore } from '@/stores/theme'
 import type { ThemeMode } from '@/stores/theme'
 
 const store = useChatStore()
 const themeStore = useThemeStore()
-const router = useRouter()
 
 const editingId = ref<string | null>(null)
 const editTitle = ref('')
@@ -60,6 +61,26 @@ function handleDelete(userId: string): void {
 const themeModes: ThemeMode[] = ['light', 'dark', 'system']
 
 const showSettingsModal = ref(false)
+
+/** 知识库灌入状态 */
+const knowledgeFilePath = ref('')
+const knowledgeLoading = ref(false)
+
+async function handleIngest(): Promise<void> {
+  const path = knowledgeFilePath.value.trim()
+  if (!path) {
+    message.warning('请输入文档路径')
+    return
+  }
+  knowledgeLoading.value = true
+  try {
+    const result = await ingestDocument(path)
+    message.success(result)
+    knowledgeFilePath.value = ''
+  } finally {
+    knowledgeLoading.value = false
+  }
+}
 
 /** 折叠态点击搜索：展开边栏并聚焦搜索框 */
 function openSearchFromCollapsed(): void {
@@ -192,42 +213,58 @@ function openSearchFromCollapsed(): void {
         </button>
       </div>
 
-      <!-- 系统设置弹窗 -->
+      <!-- 系统设置弹窗（DeepSeek 风格） -->
       <a-modal
         v-model:open="showSettingsModal"
-        title="系统设置"
         :footer="null"
-        width="360px"
+        width="480px"
         :z-index="1001"
+        class="settings-modal-root"
       >
         <div class="settings-modal">
           <!-- 主题设置 -->
           <div class="settings-section">
-            <div class="settings-label">主题设置</div>
-            <div class="theme-options">
+            <div class="section-title">主题设置</div>
+            <div class="theme-cards">
               <button
                 v-for="opt in themeModes"
                 :key="opt"
-                class="theme-option"
+                class="theme-card"
                 :class="{ active: themeStore.mode === opt }"
                 @click="themeStore.setMode(opt)"
               >
-                <component :is="themeIconMap[opt]" :size="18" />
-                <span>{{ themeLabels[opt] }}</span>
+                <component :is="themeIconMap[opt]" :size="22" />
+                <span class="theme-card-label">{{ themeLabels[opt] }}</span>
               </button>
             </div>
           </div>
 
-          <a-divider />
+          <div class="section-divider" />
 
-          <!-- 知识库管理 -->
+          <!-- 知识库管理（内嵌到弹窗） -->
           <div class="settings-section">
-            <div class="settings-label">文档管理</div>
-            <button class="settings-link" @click="showSettingsModal = false; router.push('/knowledge')">
-              <BookOutlined />
-              <span>知识库管理</span>
-              <span class="settings-arrow">→</span>
-            </button>
+            <div class="section-title">知识库管理</div>
+            <p class="section-desc">
+              输入服务器上的文档路径，文档将被切分、向量化后存入向量库，供智能体检索引用。
+            </p>
+            <div class="knowledge-form">
+              <a-input
+                v-model:value="knowledgeFilePath"
+                placeholder="例如：docs/beijing-guide.txt"
+                :disabled="knowledgeLoading"
+                @press-enter="handleIngest"
+              >
+                <template #prefix><FileTextOutlined class="input-prefix" /></template>
+              </a-input>
+              <a-button
+                type="primary"
+                :loading="knowledgeLoading"
+                @click="handleIngest"
+              >
+                <template #icon><CloudUploadOutlined /></template>
+                灌入
+              </a-button>
+            </div>
           </div>
         </div>
       </a-modal>
@@ -480,72 +517,91 @@ function openSearchFromCollapsed(): void {
   color: var(--app-text);
 }
 
-/* ===== 系统设置弹窗 ===== */
+/* ===== 系统设置弹窗（DeepSeek 风格）===== */
+:deep(.settings-modal-root .ant-modal-content) {
+  border-radius: 16px;
+  overflow: hidden;
+}
+:deep(.settings-modal-root .ant-modal-header) {
+  border-bottom: none;
+  padding: 24px 24px 8px;
+}
+:deep(.settings-modal-root .ant-modal-title) {
+  font-size: 18px;
+  font-weight: 600;
+}
+:deep(.settings-modal-root .ant-modal-body) {
+  padding: 12px 24px 24px;
+}
 .settings-modal {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0;
 }
 .settings-section {
+  padding: 8px 0;
+}
+.section-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--app-text);
+  margin-bottom: 14px;
+}
+.section-desc {
+  font-size: 12px;
+  color: var(--app-text-muted);
+  margin: 0 0 12px;
+  line-height: 1.6;
+}
+.section-divider {
+  height: 1px;
+  background: var(--app-border);
+  margin: 8px 0;
+}
+
+/* 主题卡片 */
+.theme-cards {
   display: flex;
-  flex-direction: column;
   gap: 10px;
 }
-.settings-label {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--app-text-secondary);
-}
-.theme-options {
-  display: flex;
-  gap: 8px;
-}
-.theme-option {
+.theme-card {
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 10px 8px;
-  border: 1px solid var(--app-border);
-  border-radius: 8px;
+  gap: 8px;
+  padding: 16px 12px;
+  border: 2px solid var(--app-border);
+  border-radius: 12px;
   background: transparent;
   color: var(--app-text-secondary);
-  font-size: 13px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
 }
-.theme-option:hover {
+.theme-card:hover {
   border-color: var(--app-primary);
-  color: var(--app-text);
+  background: var(--app-hover-bg);
 }
-.theme-option.active {
+.theme-card.active {
   border-color: var(--app-primary);
   background: var(--app-active-bg);
   color: var(--app-primary);
+}
+.theme-card-label {
+  font-size: 13px;
   font-weight: 500;
 }
-.settings-link {
+
+/* 知识库表单 */
+.knowledge-form {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border: 1px solid var(--app-border);
+  gap: 10px;
+}
+.knowledge-form :deep(.ant-input) {
   border-radius: 8px;
-  background: transparent;
-  color: var(--app-text-secondary);
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  width: 100%;
-  text-align: left;
 }
-.settings-link:hover {
-  border-color: var(--app-primary);
-  color: var(--app-text);
-}
-.settings-arrow {
-  margin-left: auto;
+.input-prefix {
   color: var(--app-text-muted);
+  font-size: 14px;
 }
 </style>
