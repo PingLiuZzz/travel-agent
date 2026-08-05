@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import { message } from 'ant-design-vue'
 import {
   deleteSession,
   getSessionMessages,
@@ -10,6 +11,7 @@ import {
 import type { ChatMessage, ChatSessionVo } from '@/types/chat'
 
 const CACHE_KEY = 'travel-agent:chat-state'
+const PINNED_KEY = 'travel-agent:pinned'
 
 /**
  * 对话状态管理（组合式 store）。
@@ -19,6 +21,7 @@ const CACHE_KEY = 'travel-agent:chat-state'
  * - localStorage 仅缓存已加载会话的消息，切换会话命中缓存免重复请求。
  * - 新建对话：activeUserId 为空即新建态，首条消息发出后才落库（对标 DeepSeek）。
  * - 不可变更新（展开运算符）。
+ * - 置顶与会话搜索在本地进行。
  */
 export const useChatStore = defineStore('chat', () => {
   const sessions = ref<ChatSessionVo[]>([])
@@ -26,9 +29,32 @@ export const useChatStore = defineStore('chat', () => {
   const messagesByUser = ref<Record<string, ChatMessage[]>>(loadCache())
   const loading = ref(false)
 
+  /** 置顶会话 ID 列表（前端本地持久化） */
+  const pinnedUserIds = ref<string[]>(loadPinned())
+  /** 会话搜索关键词 */
+  const searchQuery = ref('')
+  /** 侧边栏折叠状态 */
+  const sidebarCollapsed = ref(false)
+
   const activeMessages = computed<ChatMessage[]>(
     () => messagesByUser.value[activeUserId.value] ?? [],
   )
+
+  /** 过滤+排序后的会话列表：搜索过滤 → 置顶优先 → 其余按 updateTime 倒序 */
+  const displayedSessions = computed<ChatSessionVo[]>(() => {
+    let list = sessions.value
+    if (searchQuery.value) {
+      const q = searchQuery.value.toLowerCase()
+      list = list.filter(
+        s =>
+          s.title.toLowerCase().includes(q) ||
+          (s.lastMessage && s.lastMessage.toLowerCase().includes(q)),
+      )
+    }
+    const pinned = list.filter(s => pinnedUserIds.value.includes(s.userId))
+    const unpinned = list.filter(s => !pinnedUserIds.value.includes(s.userId))
+    return [...pinned, ...unpinned]
+  })
 
   /** 启动初始化：拉会话列表，默认选最近会话或进入新建态 */
   async function init(): Promise<void> {
@@ -150,8 +176,47 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
+  /** 置顶 / 取消置顶 */
+  function pinSession(userId: string): void {
+    if (pinnedUserIds.value.includes(userId)) {
+      pinnedUserIds.value = pinnedUserIds.value.filter(id => id !== userId)
+    } else {
+      pinnedUserIds.value = [...pinnedUserIds.value, userId]
+    }
+    persistPinned()
+  }
+
+  /** 分享会话：复制链接到剪贴板 */
+  function shareSession(userId: string): void {
+    const url = `${window.location.origin}/chat?session=${userId}`
+    navigator.clipboard.writeText(url).then(
+      () => message.success('会话链接已复制'),
+      () => message.error('复制失败'),
+    )
+  }
+
+  /** 侧边栏折叠切换 */
+  function toggleSidebar(): void {
+    sidebarCollapsed.value = !sidebarCollapsed.value
+  }
+
   function now(): string {
     return new Date().toLocaleTimeString('zh-CN', { hour12: false })
+  }
+
+  function persistPinned(): void {
+    try {
+      localStorage.setItem(PINNED_KEY, JSON.stringify(pinnedUserIds.value))
+    } catch { /* ignore */ }
+  }
+
+  function loadPinned(): string[] {
+    try {
+      const raw = localStorage.getItem(PINNED_KEY)
+      return raw ? (JSON.parse(raw) as string[]) : []
+    } catch {
+      return []
+    }
   }
 
   function persistCache(): void {
@@ -176,6 +241,10 @@ export const useChatStore = defineStore('chat', () => {
     activeUserId,
     loading,
     activeMessages,
+    displayedSessions,
+    pinnedUserIds,
+    searchQuery,
+    sidebarCollapsed,
     init,
     newChat,
     selectSession,
@@ -183,5 +252,8 @@ export const useChatStore = defineStore('chat', () => {
     regenerate,
     renameSessionWithTitle,
     removeSession,
+    pinSession,
+    shareSession,
+    toggleSidebar,
   }
 })

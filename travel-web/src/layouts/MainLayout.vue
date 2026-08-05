@@ -1,61 +1,41 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { BookOutlined, CompassOutlined, MessageOutlined } from '@ant-design/icons-vue'
-import ThemeSetting from '@/components/ThemeSetting.vue'
+import { useRoute } from 'vue-router'
+import { CompassOutlined, MenuUnfoldOutlined } from '@ant-design/icons-vue'
 import SessionSidebar from '@/components/SessionSidebar.vue'
+import { useChatStore } from '@/stores/chat'
 
 const route = useRoute()
-const router = useRouter()
+const store = useChatStore()
 
 const isChat = computed(() => route.path === '/chat')
-
-function navigate(path: string): void {
-  router.push(path)
-}
 </script>
 
 <template>
   <div class="app-shell">
-    <!-- 顶部导航栏 -->
-    <header class="app-header">
-      <div class="header-left">
-        <CompassOutlined class="header-logo" />
-        <span class="header-brand">Travel</span>
-        <span class="header-subtitle">旅游智能体</span>
-      </div>
-
-      <nav class="header-nav">
-        <button
-          class="nav-btn"
-          :class="{ active: isChat }"
-          @click="navigate('/chat')"
-        >
-          <MessageOutlined />
-          <span>对话</span>
-        </button>
-        <button
-          class="nav-btn"
-          :class="{ active: !isChat }"
-          @click="navigate('/knowledge')"
-        >
-          <BookOutlined />
-          <span>知识库</span>
-        </button>
-      </nav>
-
-      <div class="header-right">
-        <ThemeSetting />
-      </div>
-    </header>
-
     <!-- 主体区域 -->
     <div class="app-body">
       <!-- 对话页：左侧会话栏 -->
       <SessionSidebar v-if="isChat" />
 
-      <!-- 右侧内容区 -->
+      <!-- 内容区 -->
       <main class="app-content">
+        <!-- 非对话页（知识库等）显示小 header -->
+        <header v-if="!isChat" class="app-header">
+          <div class="header-left">
+            <CompassOutlined class="header-logo" />
+            <span class="header-brand">Travel</span>
+            <span class="header-subtitle">旅游智能体</span>
+          </div>
+        </header>
+
+        <!-- 对话页：折叠状态下显示展开按钮 -->
+        <div v-if="isChat && store.sidebarCollapsed" class="floating-toggle">
+          <button class="icon-btn" title="展开边栏" @click="store.toggleSidebar()">
+            <MenuUnfoldOutlined />
+          </button>
+        </div>
+
         <router-view />
       </main>
     </div>
@@ -70,7 +50,13 @@ function navigate(path: string): void {
   overflow: hidden;
 }
 
-/* ===== Header ===== */
+.app-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Header —— 仅非对话页使用 */
 .app-header {
   height: 52px;
   flex-shrink: 0;
@@ -81,13 +67,11 @@ function navigate(path: string): void {
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--app-border);
   z-index: 10;
-  transition: background 0.3s ease;
 }
 .header-left {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-right: 24px;
 }
 .header-logo {
   font-size: 22px;
@@ -102,49 +86,33 @@ function navigate(path: string): void {
 .header-subtitle {
   font-size: 13px;
   color: var(--app-text-muted);
-  font-weight: 400;
 }
 
-/* 导航按钮 */
-.header-nav {
-  display: flex;
-  gap: 4px;
-  flex: 1;
+/* 折叠时的浮动展开按钮 */
+.floating-toggle {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 20;
 }
-.nav-btn {
+.icon-btn {
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 16px;
-  border: none;
+  justify-content: center;
+  border: 1px solid var(--app-border);
   border-radius: 8px;
-  background: transparent;
+  background: var(--app-bubble-bg);
   color: var(--app-text-secondary);
-  font-size: 14px;
   cursor: pointer;
+  font-size: 16px;
+  box-shadow: var(--app-shadow);
   transition: all 0.15s ease;
 }
-.nav-btn:hover {
+.icon-btn:hover {
   background: var(--app-hover-bg);
   color: var(--app-text);
-}
-.nav-btn.active {
-  background: var(--app-active-bg);
-  color: var(--app-primary);
-  font-weight: 500;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  margin-left: auto;
-}
-
-/* ===== Body ===== */
-.app-body {
-  flex: 1;
-  display: flex;
-  overflow: hidden;
 }
 
 /* 内容区 */
@@ -154,5 +122,6 @@ function navigate(path: string): void {
   flex-direction: column;
   min-width: 0;
   overflow: hidden;
+  position: relative;
 }
 </style>
