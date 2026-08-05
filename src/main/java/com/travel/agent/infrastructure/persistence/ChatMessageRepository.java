@@ -26,7 +26,8 @@ public class ChatMessageRepository {
             .eq(ChatMessageEntity::getUserId, userId)
             .orderByDesc(ChatMessageEntity::getId)
             .last("LIMIT " + n);
-    List<ChatMessageEntity> desc = mapper.selectList(wrapper);
+    // copy-before-reverse：避免原地修改 mapper 返回值（MyBatis 返新 ArrayList 但非契约）
+    List<ChatMessageEntity> desc = new java.util.ArrayList<>(mapper.selectList(wrapper));
     Collections.reverse(desc);
     return desc;
   }
