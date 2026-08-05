@@ -72,10 +72,10 @@ async function handleCopy(): Promise<void> {
 }
 .avatar {
   flex-shrink: 0;
-  background-color: #1677ff;
+  background: linear-gradient(135deg, var(--app-primary), #38bdf8);
 }
 .avatar--user {
-  background-color: #52c41a;
+  background: linear-gradient(135deg, var(--app-accent), #fb923c);
 }
 .bubble-wrap {
   max-width: 70%;
@@ -97,7 +97,7 @@ async function handleCopy(): Promise<void> {
   color: var(--app-text, rgba(0, 0, 0, 0.88));
 }
 .bubble--user {
-  background-color: #1677ff;
+  background: linear-gradient(135deg, var(--app-primary), #0284c7);
   color: #ffffff;
   white-space: pre-wrap;
 }

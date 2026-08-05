@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref, watch } from 'vue'
-import { DeleteOutlined, PlusOutlined } from '@ant-design/icons-vue'
+import { CompassOutlined } from '@ant-design/icons-vue'
 import { useChatStore } from '@/stores/chat'
 import ChatInput from '@/components/ChatInput.vue'
 import MessageBubble from '@/components/MessageBubble.vue'
@@ -8,7 +8,6 @@ import MessageBubble from '@/components/MessageBubble.vue'
 const store = useChatStore()
 const scrollRef = ref<HTMLElement | null>(null)
 
-// 消息变化时自动滚动到底部
 function scrollToBottom(): void {
   nextTick(() => {
     if (scrollRef.value) {
@@ -30,138 +29,125 @@ onMounted(() => {
 
 <template>
   <div class="chat-view">
-    <!-- 左：会话列表 -->
-    <aside class="sessions">
-      <a-button type="primary" block @click="store.newChat()">
-        <template #icon><PlusOutlined /></template>
-        新建会话
-      </a-button>
-      <div class="session-list">
-        <div
-          v-for="session in store.sessions"
-          :key="session.userId"
-          class="session-item"
-          :class="{ active: session.userId === store.activeUserId }"
-        >
-          <div class="session-content" @click="store.selectSession(session.userId)">
-            <div class="session-title">{{ session.title }}</div>
-            <div class="session-preview">{{ session.lastMessage || '暂无消息' }}</div>
-          </div>
-          <a-popconfirm
-            title="确定删除该会话？"
-            ok-text="删除"
-            cancel-text="取消"
-            @confirm="store.removeSession(session.userId)"
+    <!-- 新建会话引导（无 activeUserId 且无消息时） -->
+    <div v-if="!store.activeUserId && store.activeMessages.length === 0" class="welcome">
+      <div class="welcome-inner">
+        <CompassOutlined class="welcome-icon" />
+        <h1 class="welcome-title">去哪儿？</h1>
+        <p class="welcome-desc">
+          告诉我你的目的地和日期，我来帮你规划完美的旅程
+        </p>
+        <div class="welcome-hints">
+          <button
+            v-for="hint in ['帮我规划东京三日游', '下周去上海，天气怎么样？', '推荐大理的小众景点']"
+            :key="hint"
+            class="hint-chip"
+            @click="handleSend(hint)"
           >
-            <DeleteOutlined class="session-delete" @click.stop />
-          </a-popconfirm>
+            {{ hint }}
+          </button>
         </div>
       </div>
-    </aside>
+    </div>
 
-    <!-- 右：对话区 -->
-    <section class="conversation">
-      <div ref="scrollRef" class="messages">
-        <a-empty
-          v-if="store.activeMessages.length === 0 && !store.loading"
-          description="开始你的第一次旅行规划吧"
-          class="empty"
-        />
-        <MessageBubble
-          v-for="msg in store.activeMessages"
-          :key="msg.id"
-          :message="msg"
-          @regenerate="store.regenerate"
-        />
-        <div v-if="store.loading" class="loading">
-          <a-spin tip="智能体思考中..." />
-        </div>
+    <!-- 对话消息 -->
+    <div
+      v-else
+      ref="scrollRef"
+      class="messages"
+      :class="{ 'messages--centered': store.activeMessages.length === 0 }"
+    >
+      <MessageBubble
+        v-for="msg in store.activeMessages"
+        :key="msg.id"
+        :message="msg"
+        @regenerate="store.regenerate"
+      />
+      <div v-if="store.loading" class="loading">
+        <a-spin tip="规划中..." />
       </div>
-      <ChatInput :disabled="store.loading" @send="handleSend" />
-    </section>
+    </div>
+
+    <!-- 输入区（始终在底部） -->
+    <ChatInput :disabled="store.loading" @send="handleSend" />
   </div>
 </template>
 
 <style scoped>
 .chat-view {
-  display: flex;
   height: 100%;
-}
-.sessions {
-  width: 260px;
-  flex-shrink: 0;
-  padding: 16px;
-  border-right: 1px solid var(--app-border, #f0f0f0);
-  background-color: var(--app-sider-bg, #ffffff);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  overflow: hidden;
 }
-.session-list {
-  overflow-y: auto;
+
+/* 欢迎页 */
+.welcome {
   flex: 1;
-}
-.session-item {
-  padding: 10px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  margin-bottom: 4px;
   display: flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  padding: 40px 24px;
 }
-.session-item:hover {
-  background-color: var(--app-hover-bg, #f5f5f5);
+.welcome-inner {
+  text-align: center;
+  max-width: 520px;
 }
-.session-item.active {
-  background-color: var(--app-active-bg, #e6f4ff);
+.welcome-icon {
+  font-size: 56px;
+  color: var(--app-primary);
+  margin-bottom: 20px;
+  opacity: 0.8;
 }
-.session-content {
-  flex: 1;
-  min-width: 0;
+.welcome-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--app-text);
+  margin: 0 0 8px;
+  letter-spacing: -0.5px;
 }
-.session-title {
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.welcome-desc {
+  font-size: 15px;
+  color: var(--app-text-secondary);
+  margin: 0 0 28px;
+  line-height: 1.6;
 }
-.session-preview {
-  font-size: 12px;
-  color: var(--app-text-secondary, #999);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-top: 4px;
-}
-.session-delete {
-  opacity: 0;
-  color: var(--app-text-secondary, #999);
-  flex-shrink: 0;
-  padding: 4px;
-  transition: opacity 0.2s, color 0.2s;
-}
-.session-item:hover .session-delete {
-  opacity: 1;
-}
-.session-delete:hover {
-  color: #ff4d4f;
-}
-.conversation {
-  flex: 1;
+.welcome-hints {
   display: flex;
-  flex-direction: column;
-  min-width: 0;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
 }
+.hint-chip {
+  padding: 8px 16px;
+  border: 1px solid var(--app-border);
+  border-radius: 20px;
+  background: var(--app-bubble-bg);
+  color: var(--app-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.hint-chip:hover {
+  border-color: var(--app-primary);
+  color: var(--app-primary);
+  background: var(--app-active-bg);
+}
+
+/* 消息区 */
 .messages {
   flex: 1;
   overflow-y: auto;
   padding: 24px;
 }
-.empty {
-  margin-top: 80px;
+.messages--centered {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
 .loading {
-  padding: 16px 0;
+  padding: 12px 0;
 }
 </style>
