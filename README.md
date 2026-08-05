@@ -1,6 +1,6 @@
 # 旅游出行智能体（Travel Agent）
 
-基于 **Java 21 + Spring Boot 3.4 + LangChain4j 1.17.2** 的旅游出行智能体。已具备多轮对话、工具调用（天气真实接入）、RAG 知识检索能力，提供后端 REST API；配套 Vue3 前端位于 `web/`。
+基于 **Java 21 + Spring Boot 3.4 + LangChain4j 1.17.2** 的旅游出行智能体。已具备多轮对话、工具调用（天气真实接入）、RAG 知识检索能力，提供后端 REST API；配套 Vue3 前端位于 `travel-web/`。
 
 ## 技术栈
 
@@ -13,7 +13,7 @@
 | Embedding | 千问 DashScope `qwen3.7-text-embedding` |
 | 向量库 | InMemoryEmbeddingStore（一期，进程内；二期可切 Milvus，只改一个 @Bean） |
 | 文档解析 | Apache Tika |
-| 前端 | Vue3 + TypeScript + Ant Design Vue 4（`web/`） |
+| 前端 | Vue3 + TypeScript + Ant Design Vue 4（`travel-web/`） |
 
 ## 环境要求
 
@@ -48,7 +48,7 @@ mvn spring-boot:run                                   # 监听 8080
 ### 前端
 
 ```bash
-cd web
+cd travel-web
 npm install
 npm run dev                                           # 监听 5173，/api 自动代理到 8080
 ```
@@ -84,7 +84,7 @@ curl -X POST http://localhost:8080/api/knowledge/ingest \
 ```bash
 mvn spotless:apply             # 后端格式化（google-java-format）
 mvn test                       # 后端单元测试
-cd web && npm run type-check   # 前端类型检查（vue-tsc，strict）
+cd travel-web && npm run type-check   # 前端类型检查（vue-tsc，strict）
 ```
 
 ## 工程结构
@@ -94,10 +94,10 @@ travel-agent/
 ├── src/main/java/com/travel/agent/   # 后端（DDD 包分层）
 ├── src/main/resources/               # application.yml / application-local.yml / prompts / logback
 ├── docs/                             # RAG 测试文档（如 beijing-attractions.txt）
-├── web/                              # 前端（Vue3 + Ant Design Vue）
+├── travel-web/                              # 前端（Vue3 + Ant Design Vue）
 ├── pom.xml
 ├── CLAUDE.md                         # Claude Code 指南（项目级 + 后端）
 └── README.md
 ```
 
-更详细的开发指南见 `CLAUDE.md`（项目级 + 后端）和 `web/CLAUDE.md`（前端）。
+更详细的开发指南见 `CLAUDE.md`（项目级 + 后端）和 `travel-web/CLAUDE.md`（前端）。

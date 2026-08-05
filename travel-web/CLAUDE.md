@@ -2,13 +2,13 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> 本文件覆盖前端（`web/`）。项目整体与后端指南见上级 [`../CLAUDE.md`](../CLAUDE.md)。
+> 本文件覆盖前端（`travel-web/`）。项目整体与后端指南见上级 [`../CLAUDE.md`](../CLAUDE.md)。
 
 ## 技术栈
 
 Vue3（`<script setup>`）+ TypeScript（strict，禁 any）+ Vite 5 + Ant Design Vue 4 + Pinia + Vue Router 4 + axios。
 
-## 常用命令（在 `web/` 下）
+## 常用命令（在 `travel-web/` 下）
 
 ```bash
 npm install
