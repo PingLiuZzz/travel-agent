@@ -1,5 +1,6 @@
 package com.travel.agent.interfaces.rest;
 
+import com.travel.agent.application.session.ChatResult;
 import com.travel.agent.application.session.ChatSessionService;
 import com.travel.agent.common.result.ApiResult;
 import com.travel.agent.interfaces.rest.dto.ChatRequest;
@@ -29,7 +30,7 @@ public class ChatController {
 
   @PostMapping
   public ApiResult<ChatResponse> chat(@Valid @RequestBody ChatRequest request) {
-    String reply = chatSessionService.chat(request.getUserId(), request.getMessage());
-    return ApiResult.success(new ChatResponse(reply));
+    ChatResult result = chatSessionService.chat(request.getUserId(), request.getMessage());
+    return ApiResult.success(new ChatResponse(result.reply()));
   }
 }
