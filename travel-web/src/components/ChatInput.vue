@@ -1,12 +1,26 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { SendOutlined } from '@ant-design/icons-vue'
 
-const props = defineProps<{ disabled?: boolean }>()
-const emit = defineEmits<{ send: [content: string] }>()
+const props = defineProps<{ disabled?: boolean; modelValue?: string }>()
+const emit = defineEmits<{
+  send: [content: string]
+  'update:modelValue': [value: string]
+}>()
 
 const inputValue = ref('')
 const inputRef = ref<{ focus: () => void } | null>(null)
+
+// 外部填入编辑文本时同步
+watch(
+  () => props.modelValue,
+  val => {
+    if (val) {
+      inputValue.value = val
+      nextTick(() => inputRef.value?.focus())
+    }
+  },
+)
 
 const canSend = computed(() => inputValue.value.trim().length > 0 && !props.disabled)
 
@@ -14,6 +28,7 @@ function handleSend(): void {
   if (!canSend.value) return
   const text = inputValue.value.trim()
   inputValue.value = ''
+  emit('update:modelValue', '')
   emit('send', text)
   nextTick(() => inputRef.value?.focus())
 }
@@ -52,15 +67,15 @@ function handleSend(): void {
 }
 
 .input-wrapper {
-  max-width: 768px;
+  max-width: 800px;
   margin: 0 auto;
   position: relative;
   display: flex;
   align-items: flex-end;
   background: var(--app-input-bg);
   border: 1px solid var(--app-border);
-  border-radius: 12px;
-  padding: 8px 12px;
+  border-radius: 14px;
+  padding: 10px 14px;
   box-shadow: var(--app-shadow);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -69,14 +84,13 @@ function handleSend(): void {
   box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
 }
 
-/* 覆盖 Ant Design Textarea 默认样式 */
 :deep(.ant-input) {
   border: none !important;
   box-shadow: none !important;
   background: transparent !important;
   padding: 4px 0;
-  font-size: 15px;
-  line-height: 1.6;
+  font-size: 16px;
+  line-height: 1.65;
   resize: none;
   color: var(--app-text);
 }
@@ -86,19 +100,19 @@ function handleSend(): void {
 
 .send-btn {
   flex-shrink: 0;
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--app-border);
   color: var(--app-text-muted);
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-left: 8px;
-  font-size: 15px;
+  margin-left: 10px;
+  font-size: 16px;
 }
 .send-btn.active {
   background: var(--app-primary);

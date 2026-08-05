@@ -453,16 +453,16 @@ function openSearchFromCollapsed(): void {
   min-width: 0;
 }
 .session-title {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--app-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 1px;
+  margin-bottom: 2px;
 }
 .session-preview {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--app-text-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -474,8 +474,8 @@ function openSearchFromCollapsed(): void {
 
 /* 更多按钮 */
 .more-btn {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -533,12 +533,12 @@ function openSearchFromCollapsed(): void {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 10px;
+  padding: 10px 12px;
   border: none;
   border-radius: 8px;
   background: transparent;
   color: var(--app-text-secondary);
-  font-size: 13px;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.15s ease;
   width: 100%;

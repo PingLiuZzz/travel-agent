@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import MarkdownIt from 'markdown-it'
-import { CheckOutlined, CopyOutlined, ReloadOutlined } from '@ant-design/icons-vue'
+import { CheckOutlined, CopyOutlined, EditOutlined, ReloadOutlined } from '@ant-design/icons-vue'
 import type { ChatMessage } from '@/types/chat'
 
 const props = defineProps<{ message: ChatMessage }>()
-const emit = defineEmits<{ regenerate: [] }>()
+const emit = defineEmits<{
+  regenerate: []
+  edit: [content: string]
+}>()
 
 const markdown = new MarkdownIt({
   html: false,
@@ -32,6 +35,15 @@ async function handleCopy(): Promise<void> {
   <!-- 用户消息 -->
   <div v-if="isUser" class="msg-user-wrap">
     <div class="msg-user">{{ message.content }}</div>
+    <div class="msg-actions user-actions">
+      <button class="action-btn" :title="copied ? '已复制' : '复制'" @click="handleCopy">
+        <CheckOutlined v-if="copied" />
+        <CopyOutlined v-else />
+      </button>
+      <button class="action-btn" title="编辑" @click="emit('edit', message.content)">
+        <EditOutlined />
+      </button>
+    </div>
   </div>
 
   <!-- AI 消息 -->
@@ -53,17 +65,21 @@ async function handleCopy(): Promise<void> {
 /* ===== 用户消息：右对齐，简洁底纹 ===== */
 .msg-user-wrap {
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
+  align-items: flex-end;
   margin-bottom: 28px;
   padding: 0 24px;
 }
+.msg-user-wrap:hover .user-actions {
+  opacity: 1;
+}
 .msg-user {
   max-width: 75%;
-  padding: 10px 18px;
+  padding: 12px 20px;
   border-radius: 16px;
   background: var(--app-hover-bg);
   color: var(--app-text);
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.65;
   white-space: pre-wrap;
   word-break: break-word;
@@ -83,22 +99,25 @@ async function handleCopy(): Promise<void> {
 .msg-actions {
   display: flex;
   gap: 2px;
-  margin-top: 8px;
+  margin-top: 6px;
   opacity: 0;
   transition: opacity 0.2s ease;
+}
+.user-actions {
+  justify-content: flex-end;
 }
 .action-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border: none;
   border-radius: 6px;
   background: transparent;
   color: var(--app-text-muted);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
   transition: all 0.15s ease;
 }
 .action-btn:hover {
@@ -108,7 +127,7 @@ async function handleCopy(): Promise<void> {
 
 /* ===== Markdown 渲染（DeepSeek 风格） ===== */
 .markdown-body {
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.75;
   color: var(--app-text);
 }

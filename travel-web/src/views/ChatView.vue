@@ -8,6 +8,9 @@ import MessageBubble from '@/components/MessageBubble.vue'
 const store = useChatStore()
 const scrollRef = ref<HTMLElement | null>(null)
 
+/** 暴露给子组件：将文本填入输入框供用户编辑 */
+const editContent = ref('')
+
 function scrollToBottom(): void {
   nextTick(() => {
     if (scrollRef.value) {
@@ -19,7 +22,13 @@ function scrollToBottom(): void {
 watch(() => store.activeMessages.length, scrollToBottom)
 
 function handleSend(content: string): void {
+  editContent.value = ''
   store.sendMessage(content)
+}
+
+/** 编辑用户消息：将内容放回输入框 */
+function handleEdit(content: string): void {
+  editContent.value = content
 }
 
 onMounted(() => {
@@ -62,6 +71,7 @@ onMounted(() => {
         :key="msg.id"
         :message="msg"
         @regenerate="store.regenerate"
+        @edit="handleEdit"
       />
       <div v-if="store.loading" class="loading">
         <a-spin tip="规划中..." />
@@ -69,7 +79,12 @@ onMounted(() => {
     </div>
 
     <!-- 输入区（始终在底部） -->
-    <ChatInput :disabled="store.loading" @send="handleSend" />
+    <ChatInput
+      :disabled="store.loading"
+      :model-value="editContent"
+      @update:model-value="editContent = $event"
+      @send="handleSend"
+    />
   </div>
 </template>
 
