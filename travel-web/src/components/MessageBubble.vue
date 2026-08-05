@@ -1,21 +1,17 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import MarkdownIt from 'markdown-it'
-import {
-  CheckOutlined,
-  CopyOutlined,
-  ReloadOutlined,
-  RobotOutlined,
-  UserOutlined,
-} from '@ant-design/icons-vue'
+import { CheckOutlined, CopyOutlined, ReloadOutlined } from '@ant-design/icons-vue'
 import type { ChatMessage } from '@/types/chat'
 
 const props = defineProps<{ message: ChatMessage }>()
-// 仅 AI 消息触发重新生成
 const emit = defineEmits<{ regenerate: [] }>()
 
-// 共享一个 markdown-it 实例；禁用原始 HTML 防 XSS，开启链接识别与换行
-const markdown = new MarkdownIt({ html: false, linkify: true, breaks: true })
+const markdown = new MarkdownIt({
+  html: false,
+  linkify: true,
+  breaks: true,
+})
 
 const isUser = computed(() => props.message.role === 'user')
 const renderedHtml = computed(() => markdown.render(props.message.content))
@@ -27,131 +23,192 @@ async function handleCopy(): Promise<void> {
     copied.value = true
     setTimeout(() => (copied.value = false), 2000)
   } catch {
-    // 剪贴板权限被拒时静默忽略
+    /* 剪贴板不可用 */
   }
 }
 </script>
 
 <template>
-  <div class="message" :class="isUser ? 'message--user' : 'message--assistant'">
-    <a-avatar class="avatar" :class="{ 'avatar--user': isUser }">
-      <UserOutlined v-if="isUser" />
-      <RobotOutlined v-else />
-    </a-avatar>
-    <div class="bubble-wrap">
-      <!-- 用户消息纯文本，AI 消息渲染 Markdown -->
-      <div v-if="isUser" class="bubble bubble--user">{{ message.content }}</div>
-      <div v-else class="bubble bubble--ai markdown-body" v-html="renderedHtml"></div>
-      <!-- AI 消息操作栏：复制 + 重新生成 -->
-      <div v-if="!isUser" class="actions">
-        <a-tooltip :title="copied ? '已复制' : '复制'">
-          <a-button size="small" type="text" @click="handleCopy">
-            <CheckOutlined v-if="copied" />
-            <CopyOutlined v-else />
-          </a-button>
-        </a-tooltip>
-        <a-tooltip title="重新生成">
-          <a-button size="small" type="text" @click="emit('regenerate')">
-            <ReloadOutlined />
-          </a-button>
-        </a-tooltip>
-      </div>
+  <!-- 用户消息 -->
+  <div v-if="isUser" class="msg-user-wrap">
+    <div class="msg-user">{{ message.content }}</div>
+  </div>
+
+  <!-- AI 消息 -->
+  <div v-else class="msg-ai">
+    <div class="markdown-body" v-html="renderedHtml" />
+    <div class="msg-actions">
+      <button class="action-btn" :title="copied ? '已复制' : '复制'" @click="handleCopy">
+        <CheckOutlined v-if="copied" />
+        <CopyOutlined v-else />
+      </button>
+      <button class="action-btn" title="重新生成" @click="emit('regenerate')">
+        <ReloadOutlined />
+      </button>
     </div>
   </div>
 </template>
 
 <style scoped>
-.message {
+/* ===== 用户消息：右对齐，简洁底纹 ===== */
+.msg-user-wrap {
   display: flex;
-  gap: 12px;
-  margin-bottom: 20px;
-  align-items: flex-start;
+  justify-content: flex-end;
+  margin-bottom: 28px;
+  padding: 0 24px;
 }
-.message--user {
-  flex-direction: row-reverse;
-}
-.avatar {
-  flex-shrink: 0;
-  background: linear-gradient(135deg, var(--app-primary), #38bdf8);
-}
-.avatar--user {
-  background: linear-gradient(135deg, var(--app-accent), #fb923c);
-}
-.bubble-wrap {
-  max-width: 70%;
-  display: flex;
-  flex-direction: column;
-}
-.message--user .bubble-wrap {
-  align-items: flex-end;
-}
-.bubble {
-  padding: 10px 16px;
-  border-radius: 8px;
-  line-height: 1.6;
+.msg-user {
+  max-width: 75%;
+  padding: 10px 18px;
+  border-radius: 16px;
+  background: var(--app-hover-bg);
+  color: var(--app-text);
+  font-size: 15px;
+  line-height: 1.65;
+  white-space: pre-wrap;
   word-break: break-word;
 }
-.bubble--ai {
-  background-color: var(--app-bubble-bg, #ffffff);
-  border: 1px solid var(--app-border, #f0f0f0);
-  color: var(--app-text, rgba(0, 0, 0, 0.88));
+
+/* ===== AI 消息：全宽 Markdown 文档流 ===== */
+.msg-ai {
+  max-width: 800px;
+  margin: 0 auto 32px;
+  padding: 0 24px;
 }
-.bubble--user {
-  background: linear-gradient(135deg, var(--app-primary), #0284c7);
-  color: #ffffff;
-  white-space: pre-wrap;
-}
-.actions {
-  display: flex;
-  gap: 4px;
-  margin-top: 4px;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-.message:hover .actions {
+.msg-ai:hover .msg-actions {
   opacity: 1;
 }
-/* Markdown 渲染样式 */
-.markdown-body :deep(h1),
-.markdown-body :deep(h2),
-.markdown-body :deep(h3),
-.markdown-body :deep(h4) {
-  margin: 12px 0 8px;
-  font-weight: 600;
-  line-height: 1.4;
+
+/* 操作按钮 */
+.msg-actions {
+  display: flex;
+  gap: 2px;
+  margin-top: 8px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
-.markdown-body :deep(p) {
-  margin: 6px 0;
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--app-text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.15s ease;
 }
+.action-btn:hover {
+  background: var(--app-hover-bg);
+  color: var(--app-text);
+}
+
+/* ===== Markdown 渲染（DeepSeek 风格） ===== */
+.markdown-body {
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--app-text);
+}
+
+/* 标题 */
+.markdown-body :deep(h1) { font-size: 1.5em; font-weight: 700; margin: 24px 0 12px; }
+.markdown-body :deep(h2) { font-size: 1.3em; font-weight: 600; margin: 20px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--app-border); }
+.markdown-body :deep(h3) { font-size: 1.15em; font-weight: 600; margin: 16px 0 8px; }
+.markdown-body :deep(h4) { font-size: 1em; font-weight: 600; margin: 14px 0 6px; }
+
+/* 段落 */
+.markdown-body :deep(p) { margin: 8px 0; }
+
+/* 列表 */
 .markdown-body :deep(ul),
 .markdown-body :deep(ol) {
-  padding-left: 20px;
-  margin: 6px 0;
+  padding-left: 24px;
+  margin: 10px 0;
 }
 .markdown-body :deep(li) {
-  margin: 2px 0;
+  margin: 4px 0;
 }
-.markdown-body :deep(table) {
-  border-collapse: collapse;
-  width: 100%;
-  margin: 8px 0;
+.markdown-body :deep(li)::marker {
+  color: var(--app-text-muted);
 }
-.markdown-body :deep(th),
-.markdown-body :deep(td) {
-  border: 1px solid var(--app-border, #e8e8e8);
-  padding: 6px 10px;
-  text-align: left;
-}
+
+/* 粗体 / 斜体 */
+.markdown-body :deep(strong) { font-weight: 600; color: var(--app-text); }
+.markdown-body :deep(em) { font-style: italic; }
+
+/* 代码 */
 .markdown-body :deep(code) {
-  background: rgba(0, 0, 0, 0.06);
-  padding: 2px 4px;
-  border-radius: 3px;
-  font-size: 0.9em;
+  background: var(--app-hover-bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.88em;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  color: var(--app-accent);
 }
+.markdown-body :deep(pre) {
+  background: var(--app-sider-bg);
+  border: 1px solid var(--app-border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  overflow-x: auto;
+  margin: 14px 0;
+}
+.markdown-body :deep(pre code) {
+  background: none;
+  padding: 0;
+  color: var(--app-text);
+  font-size: 0.85em;
+  line-height: 1.65;
+}
+
+/* 引用 */
 .markdown-body :deep(blockquote) {
-  border-left: 3px solid var(--app-border, #d9d9d9);
-  padding-left: 12px;
-  margin: 8px 0;
-  color: var(--app-text-secondary, rgba(0, 0, 0, 0.45));
+  border-left: 3px solid var(--app-primary);
+  padding: 8px 16px;
+  margin: 12px 0;
+  background: var(--app-active-bg);
+  border-radius: 0 8px 8px 0;
+  color: var(--app-text-secondary);
+}
+
+/* 表格 */
+.markdown-body :deep(table) {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  font-size: 0.93em;
+}
+.markdown-body :deep(th) {
+  background: var(--app-hover-bg);
+  font-weight: 600;
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 2px solid var(--app-border);
+}
+.markdown-body :deep(td) {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--app-border);
+}
+.markdown-body :deep(tr:last-child td) {
+  border-bottom: none;
+}
+
+/* 分割线 */
+.markdown-body :deep(hr) {
+  border: none;
+  border-top: 1px solid var(--app-border);
+  margin: 20px 0;
+}
+
+/* 链接 */
+.markdown-body :deep(a) {
+  color: var(--app-primary);
+  text-decoration: none;
+}
+.markdown-body :deep(a:hover) {
+  text-decoration: underline;
 }
 </style>

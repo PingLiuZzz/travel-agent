@@ -139,7 +139,7 @@ onMounted(() => {
 .messages {
   flex: 1;
   overflow-y: auto;
-  padding: 24px;
+  padding: 32px 0;
 }
 .messages--centered {
   display: flex;
@@ -148,6 +148,7 @@ onMounted(() => {
 }
 
 .loading {
-  padding: 12px 0;
+  padding: 12px 24px;
+  text-align: center;
 }
 </style>
