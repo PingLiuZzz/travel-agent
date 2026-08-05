@@ -14,15 +14,16 @@ import org.springframework.stereotype.Component;
 @Component
 public class HotelTool {
 
-    private final HotelClient hotelClient;
+  private final HotelClient hotelClient;
 
-    @Autowired
-    public HotelTool(HotelClient hotelClient) {
-        this.hotelClient = hotelClient;
-    }
+  @Autowired
+  public HotelTool(HotelClient hotelClient) {
+    this.hotelClient = hotelClient;
+  }
 
-    @Tool("预订酒店：根据城市、酒店名、入住/退房日期、房型生成待确认订单（不直接支付）")
-    public HotelBooking bookHotel(String city, String hotelName, String checkIn, String checkOut, String roomType) {
-        return hotelClient.book(city, hotelName, checkIn, checkOut, roomType);
-    }
+  @Tool("预订酒店：根据城市、酒店名、入住/退房日期、房型生成待确认订单（不直接支付）")
+  public HotelBooking bookHotel(
+      String city, String hotelName, String checkIn, String checkOut, String roomType) {
+    return hotelClient.book(city, hotelName, checkIn, checkOut, roomType);
+  }
 }

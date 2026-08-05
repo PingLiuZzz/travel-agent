@@ -14,23 +14,22 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * 对话入口接口。
  *
- * <p>Web/小程序前端统一通过该接口与智能体交互。
- * 用 userId 区分会话，支持多轮上下文。
+ * <p>Web/小程序前端统一通过该接口与智能体交互。 用 userId 区分会话，支持多轮上下文。
  */
 @RestController
 @RequestMapping("/api/chat")
 public class ChatController {
 
-    private final ChatSessionService chatSessionService;
+  private final ChatSessionService chatSessionService;
 
-    @Autowired
-    public ChatController(ChatSessionService chatSessionService) {
-        this.chatSessionService = chatSessionService;
-    }
+  @Autowired
+  public ChatController(ChatSessionService chatSessionService) {
+    this.chatSessionService = chatSessionService;
+  }
 
-    @PostMapping
-    public ApiResult<ChatResponse> chat(@Valid @RequestBody ChatRequest request) {
-        String reply = chatSessionService.chat(request.getUserId(), request.getMessage());
-        return ApiResult.success(new ChatResponse(reply));
-    }
+  @PostMapping
+  public ApiResult<ChatResponse> chat(@Valid @RequestBody ChatRequest request) {
+    String reply = chatSessionService.chat(request.getUserId(), request.getMessage());
+    return ApiResult.success(new ChatResponse(reply));
+  }
 }

@@ -14,20 +14,20 @@ import lombok.Data;
 @AllArgsConstructor
 public class ApiResult<T> {
 
-    /** 业务状态码：0 表示成功，非 0 表示业务错误 */
-    private int code;
+  /** 业务状态码：0 表示成功，非 0 表示业务错误 */
+  private int code;
 
-    /** 提示信息 */
-    private String message;
+  /** 提示信息 */
+  private String message;
 
-    /** 数据载荷 */
-    private T data;
+  /** 数据载荷 */
+  private T data;
 
-    public static <T> ApiResult<T> success(T data) {
-        return new ApiResult<>(0, "success", data);
-    }
+  public static <T> ApiResult<T> success(T data) {
+    return new ApiResult<>(0, "success", data);
+  }
 
-    public static <T> ApiResult<T> error(int code, String message) {
-        return new ApiResult<>(code, message, null);
-    }
+  public static <T> ApiResult<T> error(int code, String message) {
+    return new ApiResult<>(code, message, null);
+  }
 }
