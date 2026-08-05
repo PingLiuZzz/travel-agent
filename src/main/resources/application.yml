@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: travel-agent
+  profiles:
+    active: dev,local
+  servlet:
+    multipart:
+      max-file-size: 50MB   # 知识库文档上传大小限制
+      max-request-size: 50MB
+
+server:
+  port: 8080
+
+# 业务配置：集中管理 LLM / Embedding 连接信息
+travel:
+  llm:
+    # DeepSeek 示例（兼容 OpenAI 协议）；切 Qwen 仅改 base-url + model-name + key
+    base-url: https://api.deepseek.com
+    api-key: ${LLM_API_KEY}
+    model-name: deepseek-chat
+    temperature: 0.7
+    max-tokens: 2048
+  embedding:
+    # 千问（DashScope）OpenAI 兼容模式；模型名 qwen3.7-text-embedding 待 M3 启用时验证
+    base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+    api-key: ${EMBEDDING_API_KEY}
+    model-name: qwen3.7-text-embedding
+    dimension: 1024
+  memory:
+    max-messages: 20   # 单会话最大保留消息数（滑窗策略）
+  rag:
+    top-k: 3           # RAG 召回条数
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

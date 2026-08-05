@@ -1,0 +1,7 @@
+# 开发环境覆盖配置
+logging:
+  level:
+    com.travel.agent: debug
+    dev.langchain4j: info
+  # 打印 LLM 请求/响应，便于联调（生产环境关闭）
+  # dev.langchain4j: debug

@@ -1,0 +1,24 @@
+# 构建产物
+target/
+web/dist/
+web/node_modules/
+
+# 版本控制与 IDE
+.git/
+.idea/
+.vscode/
+*.iml
+
+# 日志与本地配置（含密钥，勿入镜像）
+logs/
+*.log
+.env
+# 递归匹配所有目录下的 local 配置（含 src/main/resources，防密钥打进 jar）
+**/application-local.yml
+
+# Docker 自身（避免循环）
+Dockerfile
+.dockerignore
+# Docker 编排文件不进构建上下文；例外放行构建必需的 maven-settings.xml
+docker/*
+!docker/maven-settings.xml

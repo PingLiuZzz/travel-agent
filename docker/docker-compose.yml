@@ -1,0 +1,83 @@
+# 一键启动：Milvus 向量库 + Java 应用
+#
+# 用法（需先安装 Docker Desktop）：
+#   1. 项目根创建 .env 文件（复制 .env.example），填入：
+#        LLM_API_KEY=你的 DeepSeek Key
+#        EMBEDDING_API_KEY=你的 DashScope Key
+#   2. 启动全部：     docker compose -f docker/docker-compose.yml up -d
+#   3. 仅启动应用：   docker compose -f docker/docker-compose.yml up -d app
+#   4. 仅启动 Milvus：docker compose -f docker/docker-compose.yml up -d milvus
+services:
+  # ===== Milvus 向量库（二期启用 Milvus 时使用；一期 app 用内存向量库，可不启）=====
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.5
+    restart: unless-stopped
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+    volumes:
+      - etcd_data:/etcd
+    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+
+  minio:
+    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+    restart: unless-stopped
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    volumes:
+      - minio_data:/minio_data
+    command: minio server /minio_data
+    # 最简端口探测：minio 监听 9000
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/9000' || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  milvus:
+    image: milvusdb/milvus:v2.4.0
+    restart: unless-stopped
+    command: ["milvus", "run", "standalone"]
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    depends_on: [etcd, minio]
+    # 最简端口探测：milvus 健康/metrics 端口 9091
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/9091' || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+
+  # ===== Java 应用（一期用内存向量库，独立运行）=====
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      LLM_API_KEY: ${LLM_API_KEY}
+      EMBEDDING_API_KEY: ${EMBEDDING_API_KEY}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    # 一期 app 用内存向量库，不依赖 Milvus；二期切 Milvus 时改为带就绪条件的依赖：
+    # depends_on:
+    #   milvus:
+    #     condition: service_healthy
+
+volumes:
+  etcd_data:
+  minio_data:
