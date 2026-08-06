@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { CompassOutlined } from '@ant-design/icons-vue'
 import { useChatStore } from '@/stores/chat'
 import ChatInput from '@/components/ChatInput.vue'
@@ -8,15 +8,33 @@ import MessageBubble from '@/components/MessageBubble.vue'
 const store = useChatStore()
 const scrollRef = ref<HTMLElement | null>(null)
 
-function scrollToBottom(): void {
+/** 是否已滚到接近底部（用于流式时仅在用户未上滑的情况下自动跟随） */
+function isNearBottom(): boolean {
+  const el = scrollRef.value
+  if (!el) return true
+  return el.scrollHeight - el.scrollTop - el.clientHeight < 120
+}
+
+function scrollToBottom(force = false): void {
   nextTick(() => {
-    if (scrollRef.value) {
-      scrollRef.value.scrollTop = scrollRef.value.scrollHeight
+    const el = scrollRef.value
+    if (!el) return
+    if (force || isNearBottom()) {
+      el.scrollTop = el.scrollHeight
     }
   })
 }
 
-watch(() => store.activeMessages.length, scrollToBottom)
+// 最后一条消息的内容长度（流式逐 token 增长时会变化）
+const lastMsgLen = computed(() => {
+  const arr = store.activeMessages
+  const last = arr[arr.length - 1]
+  return last ? last.content.length : 0
+})
+
+// 新消息：强制滚到底；流式内容增长：仅当用户已在底部附近时跟随，避免打断上滑阅读
+watch(() => store.activeMessages.length, () => scrollToBottom(true))
+watch(lastMsgLen, () => scrollToBottom(false))
 
 function handleSend(content: string): void {
   store.sendMessage(content)
@@ -69,13 +87,15 @@ onMounted(() => {
         @regenerate="store.regenerate"
         @edit-send="handleEditSend"
       />
-      <div v-if="store.loading" class="loading">
-        <a-spin tip="规划中..." />
-      </div>
     </div>
 
     <!-- 输入区（始终在底部） -->
-    <ChatInput :disabled="store.loading" @send="handleSend" />
+    <ChatInput
+      :disabled="store.loading"
+      :streaming="store.loading"
+      @send="handleSend"
+      @stop="store.stopGenerating"
+    />
   </div>
 </template>
 
@@ -151,10 +171,5 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.loading {
-  padding: 12px 24px;
-  text-align: center;
 }
 </style>

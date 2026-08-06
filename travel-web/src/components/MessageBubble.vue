@@ -99,16 +99,20 @@ function confirmEdit(): void {
 
   <!-- AI 消息 -->
   <div v-else class="msg-ai">
-    <div class="markdown-body" v-html="renderedHtml" />
-    <div class="msg-actions">
-      <button class="action-btn" :title="copied ? '已复制' : '复制'" @click="handleCopy()">
-        <CheckOutlined v-if="copied" />
-        <CopyOutlined v-else />
-      </button>
-      <button class="action-btn" title="重新生成" @click="emit('regenerate')">
-        <ReloadOutlined />
-      </button>
-    </div>
+    <!-- 空内容：流式前的"思考中"占位 -->
+    <div v-if="!message.content" class="thinking">思考中<span class="cursor" /></div>
+    <template v-else>
+      <div class="markdown-body" v-html="renderedHtml" />
+      <div class="msg-actions">
+        <button class="action-btn" :title="copied ? '已复制' : '复制'" @click="handleCopy()">
+          <CheckOutlined v-if="copied" />
+          <CopyOutlined v-else />
+        </button>
+        <button class="action-btn" title="重新生成" @click="emit('regenerate')">
+          <ReloadOutlined />
+        </button>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -144,6 +148,28 @@ function confirmEdit(): void {
 }
 .msg-ai:hover .msg-actions {
   opacity: 1;
+}
+
+/* 流式前的"思考中"占位 + 闪烁光标 */
+.thinking {
+  font-size: 16px;
+  color: var(--app-text-muted);
+  display: inline-flex;
+  align-items: center;
+}
+.cursor {
+  display: inline-block;
+  width: 8px;
+  height: 18px;
+  margin-left: 4px;
+  border-radius: 1px;
+  background: var(--app-primary);
+  animation: msg-cursor-blink 1s steps(2, start) infinite;
+}
+@keyframes msg-cursor-blink {
+  to {
+    visibility: hidden;
+  }
 }
 
 /* 操作按钮 */

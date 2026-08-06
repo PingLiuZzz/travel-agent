@@ -2,6 +2,7 @@ package com.travel.agent.config;
 
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
+import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -16,7 +17,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class LlmConfig {
 
-  /** 对话大模型：负责理解意图、调用工具、生成行程。 */
+  /** 对话大模型：负责理解意图、调用工具、生成行程（整段返回，供同步接口与标题总结使用）。 */
   @Bean
   public OpenAiChatModel chatModel(TravelAiProperties properties) {
     TravelAiProperties.Llm llm = properties.getLlm();
@@ -28,6 +29,19 @@ public class LlmConfig {
         .maxTokens(llm.getMaxTokens())
         .logRequests(true)
         .logResponses(false)
+        .build();
+  }
+
+  /** 流式对话大模型：逐 token 下发，供前端打字机效果（POST /api/chat/stream）。 */
+  @Bean
+  public OpenAiStreamingChatModel streamingChatModel(TravelAiProperties properties) {
+    TravelAiProperties.Llm llm = properties.getLlm();
+    return OpenAiStreamingChatModel.builder()
+        .baseUrl(llm.getBaseUrl())
+        .apiKey(llm.getApiKey())
+        .modelName(llm.getModelName())
+        .temperature(llm.getTemperature())
+        .maxTokens(llm.getMaxTokens())
         .build();
   }
 

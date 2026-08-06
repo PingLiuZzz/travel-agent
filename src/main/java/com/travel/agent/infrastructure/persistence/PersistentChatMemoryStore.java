@@ -19,15 +19,12 @@ import org.springframework.stereotype.Component;
  * <p>关键设计：
  *
  * <ul>
- *   <li><b>进程内缓存</b>：AiServices 在一次请求内可能多次创建 MessageWindowChatMemory
- *       （特别是触发工具调用循环时），每次 build() 都调 getMessages 初始化。 若仅依赖
- *       DB（updateMessages no-op → DB 无当前轮消息），第 2/3 次 getMessages 返回空，
- *       导致 {@code messages cannot be null or empty}。 进程内缓存使得同一 memoryId 的
- *       后续 getMessages 返回已累积消息（updateMessages 写入缓存）。
- *   <li><b>DB 兜底</b>：重启后缓存为空，getMessages 回退 DB 读最近 maxMessages 条，
- *       用于 LLM 上下文恢复（后端重启不失忆）。
- *   <li><b>不写 DB</b>：全量历史由 ChatSessionService 按条落库，这里不二次写，
- *       避免滑窗截断污染全量历史、避免 user message 重复。
+ *   <li><b>进程内缓存</b>：AiServices 在一次请求内可能多次创建 MessageWindowChatMemory （特别是触发工具调用循环时），每次 build() 都调
+ *       getMessages 初始化。 若仅依赖 DB（updateMessages no-op → DB 无当前轮消息），第 2/3 次 getMessages 返回空， 导致
+ *       {@code messages cannot be null or empty}。 进程内缓存使得同一 memoryId 的 后续 getMessages
+ *       返回已累积消息（updateMessages 写入缓存）。
+ *   <li><b>DB 兜底</b>：重启后缓存为空，getMessages 回退 DB 读最近 maxMessages 条， 用于 LLM 上下文恢复（后端重启不失忆）。
+ *   <li><b>不写 DB</b>：全量历史由 ChatSessionService 按条落库，这里不二次写， 避免滑窗截断污染全量历史、避免 user message 重复。
  * </ul>
  */
 @Component
@@ -55,10 +52,11 @@ public class PersistentChatMemoryStore implements ChatMemoryStore {
     }
     // 缓存未命中：从 DB 加载（首次对话或重启后恢复）
     String userId = String.valueOf(memoryId);
-    List<ChatMessage> fromDb = new ArrayList<>(
-        repository.findRecentByUserId(userId, maxMessages).stream()
-            .map(PersistentChatMemoryStore::toChatMessage)
-            .toList());
+    List<ChatMessage> fromDb =
+        new ArrayList<>(
+            repository.findRecentByUserId(userId, maxMessages).stream()
+                .map(PersistentChatMemoryStore::toChatMessage)
+                .toList());
     cache.put(memoryId, fromDb);
     return new ArrayList<>(fromDb);
   }

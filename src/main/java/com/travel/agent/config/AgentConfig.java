@@ -6,6 +6,7 @@ import com.travel.agent.infrastructure.tools.HotelTool;
 import com.travel.agent.infrastructure.tools.WeatherTool;
 import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.service.AiServices;
 import java.io.IOException;
@@ -29,6 +30,9 @@ import org.springframework.core.io.ClassPathResource;
  *   <li>M2：加入 tools（自主调用天气/航班/酒店）—— 当前阶段
  *   <li>M3：加入 contentRetriever（知识检索，需配置有效 Embedding Key 后启用）
  * </ul>
+ *
+ * <p>同时注入 chatModel（整段）与 streamingChatModel（流式）：返回 String 的方法走前者， 返回 TokenStream
+ * 的方法走后者，memory/tools/RAG 共享。
  */
 @Configuration
 public class AgentConfig {
@@ -36,6 +40,8 @@ public class AgentConfig {
   private static final Logger log = LoggerFactory.getLogger(AgentConfig.class);
 
   @Autowired private ChatModel chatModel;
+
+  @Autowired private StreamingChatModel streamingChatModel;
 
   @Autowired private ChatMemoryProvider chatMemoryProvider;
 
@@ -66,6 +72,7 @@ public class AgentConfig {
     String systemPrompt = loadSystemPrompt();
     return AiServices.builder(TravelAgent.class)
         .chatModel(chatModel)
+        .streamingChatModel(streamingChatModel)
         .chatMemoryProvider(chatMemoryProvider)
         .tools(weatherTool, flightTool, hotelTool)
         // M3 RAG 检索器：配置有效 Embedding API Key 后，
