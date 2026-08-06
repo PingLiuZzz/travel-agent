@@ -39,10 +39,12 @@ application-local.yml
 .env
 
 ### 前端依赖与构建产物 ###
-node_modules/
+travel-web/node_modules/
 travel-web/dist/
+travel-web/.vite/
 
 ### superpowers SDD 工作区（scratch）###
 .superpowers/
+docs/
 CLAUDE.md
 travel-web/CLAUDE.md
