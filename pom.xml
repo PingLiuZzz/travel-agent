@@ -19,7 +19,7 @@
     <description>旅游出行智能体 - 基于 LangChain4j 的 Travel Agent</description>
 
     <properties>
-        <java.version>21</java.version>
+        <java.version>17</java.version>
         <!-- 核心与主流集成已 GA(1.17.2)，部分扩展模块仍 beta(1.17.2-beta27)，故拆两个版本号 -->
         <langchain4j.version>1.17.2</langchain4j.version>
         <langchain4j-ext.version>1.17.2-beta27</langchain4j-ext.version>

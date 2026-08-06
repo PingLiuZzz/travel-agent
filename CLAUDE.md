@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 环境约束（非显而易见，务必遵守）
 
-- **JDK 21**：系统默认 `java` 是 17，但 pom 的 `java.version=21`。所有 mvn 命令前必须设 `$env:JAVA_HOME="E:\File-work\Java_Detail\jdk-21"`（PowerShell），否则编译失败。jdk-21 实际为 21.0.10 LTS。
+- **JDK 17**：系统默认 `java` 是 17。
 - **Maven 本地仓库非默认**：`localRepository` 是 `E:\File-work\Java_Detail\maven\repo`（不是 `~/.m2`），镜像走阿里云。排查依赖 / jar 内容时去这个目录找，不要去 `~/.m2`。
 - **LangChain4j 版本双轨**（pom 已配，勿统一）：核心与主流集成已 GA `1.17.2`（`langchain4j`、`langchain4j-open-ai`），部分扩展仍 beta `1.17.2-beta27`（`langchain4j-document-parser-apache-tika`）。两套版本号在 pom properties 分别管理。
 

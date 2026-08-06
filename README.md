@@ -1,23 +1,23 @@
 # 旅游出行智能体（Travel Agent）
 
-基于 **Java 21 + Spring Boot 3.4 + LangChain4j 1.17.2** 的旅游出行智能体。已具备多轮对话、工具调用（天气真实接入）、RAG 知识检索能力，提供后端 REST API；配套 Vue3 前端位于 `travel-web/`。
+基于 **Java 17 + Spring Boot 3.4 + LangChain4j 1.17.2** 的旅游出行智能体。已具备多轮对话、工具调用（天气真实接入）、RAG 知识检索能力，提供后端 REST API；配套 Vue3 前端位于 `travel-web/`。
 
 ## 技术栈
 
-| 类别 | 选型 |
-|---|---|
-| 语言/运行时 | JDK 21 |
-| 后端框架 | Spring Boot 3.4 |
-| AI 框架 | LangChain4j 1.17.2（核心 GA）/ 1.17.2-beta27（Tika 扩展） |
-| 大模型 | DeepSeek（对话，OpenAI 协议） |
-| Embedding | 千问 DashScope `qwen3.7-text-embedding` |
+| 类别 | 选型                                                    |
+|---|-------------------------------------------------------|
+| 语言/运行时 | JDK 17                                                 |
+| 后端框架 | Spring Boot 3.4                                       |
+| AI 框架 | LangChain4j 1.17.2（核心 GA）/ 1.17.2-beta27（Tika 扩展）     |
+| 大模型 | DeepSeek（对话，OpenAI 协议）                                |
+| Embedding | 千问 DashScope `qwen3.7-text-embedding`                 |
 | 向量库 | InMemoryEmbeddingStore（一期，进程内；二期可切 Milvus，只改一个 @Bean） |
-| 文档解析 | Apache Tika |
-| 前端 | Vue3 + TypeScript + Ant Design Vue 4（`travel-web/`） |
+| 文档解析 | Apache Tika                                           |
+| 前端 | Vue3 + TypeScript + Ant Design Vue 4（`travel-web/`）   |
 
 ## 环境要求
 
-- **JDK 21**（系统默认可能是 17，需切换）：本机位于 `E:\File-work\Java_Detail\jdk-21`
+- **JDK 17**（系统默认是 17）：本机位于 `E:\File-work\Java_Detail\jdk-17`
 - **Maven 3.8+**，本地仓库 `E:\File-work\Java_Detail\maven\repo`（非默认 `~/.m2`），镜像阿里云
 - **Node 18+ / npm**
 
