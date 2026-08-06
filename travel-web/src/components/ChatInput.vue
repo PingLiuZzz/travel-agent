@@ -2,9 +2,10 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { SendOutlined } from '@ant-design/icons-vue'
 
-const props = defineProps<{ disabled?: boolean; modelValue?: string }>()
+const props = defineProps<{ disabled?: boolean; streaming?: boolean; modelValue?: string }>()
 const emit = defineEmits<{
   send: [content: string]
+  stop: []
   'update:modelValue': [value: string]
 }>()
 
@@ -45,7 +46,11 @@ function handleSend(): void {
         placeholder="输入你的旅行计划，例如：帮我规划下周深圳到北京的三天旅行"
         @press-enter="handleSend"
       />
+      <button v-if="streaming" class="stop-btn" title="停止生成" @click="emit('stop')">
+        <span class="stop-square" />
+      </button>
       <button
+        v-else
         class="send-btn"
         :class="{ active: canSend }"
         :disabled="!canSend"
@@ -123,5 +128,31 @@ function handleSend(): void {
 }
 .send-btn:disabled {
   cursor: not-allowed;
+}
+
+/* 停止生成按钮（流式中替换发送按钮） */
+.stop-btn {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 10px;
+  background: var(--app-primary);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 10px;
+}
+.stop-btn:hover {
+  background: var(--app-primary-hover);
+}
+.stop-square {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: #fff;
 }
 </style>

@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 环境约束（非显而易见，务必遵守）
 
-- **JDK 17**：系统默认 `java` 是 17。
+- **JDK 17**：系统默认 `java` 与 `JAVA_HOME` 均指向 `E:\File-work\Java_Detail\jdk-17`（17.0.18 LTS），pom 的 `java.version=17` 与之一致，执行 mvn 前**无需**额外设 `JAVA_HOME`。若需临时用 21（`jdk-21`，21.0.10 LTS）单独验证，再显式覆盖 `JAVA_HOME`。
 - **Maven 本地仓库非默认**：`localRepository` 是 `E:\File-work\Java_Detail\maven\repo`（不是 `~/.m2`），镜像走阿里云。排查依赖 / jar 内容时去这个目录找，不要去 `~/.m2`。
 - **LangChain4j 版本双轨**（pom 已配，勿统一）：核心与主流集成已 GA `1.17.2`（`langchain4j`、`langchain4j-open-ai`），部分扩展仍 beta `1.17.2-beta27`（`langchain4j-document-parser-apache-tika`）。两套版本号在 pom properties 分别管理。
 
@@ -19,9 +19,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### 后端（在 `travel-agent/`）
 
 ```powershell
-$env:JAVA_HOME = "E:\File-work\Java_Detail\jdk-21"   # 每次执行 mvn 前必设
-
-mvn -q compile                    # 编译
+mvn -q compile                    # 编译（JAVA_HOME 默认即 jdk-17，无需另设）
 mvn spring-boot:run               # 启动（监听 8080）
 mvn spotless:apply                # 格式化（google-java-format，质量门禁）
 mvn test                          # 全部单元测试

@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import {
-  CloudUploadOutlined,
+  BookOutlined,
   CompassOutlined,
   DeleteOutlined,
   EditOutlined,
   EllipsisOutlined,
-  FileTextOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   PushpinFilled,
@@ -15,10 +15,8 @@ import {
   SettingOutlined,
   ShareAltOutlined,
 } from '@ant-design/icons-vue'
-import { message } from 'ant-design-vue'
 import { Monitor, Moon, Sun } from 'lucide-vue-next'
 import type { Component } from 'vue'
-import { ingestDocument } from '@/api/knowledge'
 import { useChatStore } from '@/stores/chat'
 import { useThemeStore } from '@/stores/theme'
 import type { ThemeMode } from '@/stores/theme'
@@ -61,27 +59,13 @@ function handleDelete(userId: string): void {
 const themeModes: ThemeMode[] = ['light', 'dark', 'system']
 
 const showSettingsModal = ref(false)
-/** 弹窗内当前选中的设置项 */
-const settingsTab = ref<'theme' | 'knowledge'>('theme')
 
-/** 知识库灌入状态 */
-const knowledgeFilePath = ref('')
-const knowledgeLoading = ref(false)
+const router = useRouter()
 
-async function handleIngest(): Promise<void> {
-  const path = knowledgeFilePath.value.trim()
-  if (!path) {
-    message.warning('请输入文档路径')
-    return
-  }
-  knowledgeLoading.value = true
-  try {
-    const result = await ingestDocument(path)
-    message.success(result)
-    knowledgeFilePath.value = ''
-  } finally {
-    knowledgeLoading.value = false
-  }
+/** 跳转知识库管理页（关闭设置弹窗） */
+function goKnowledge(): void {
+  showSettingsModal.value = false
+  router.push('/knowledge')
 }
 
 /** 折叠态点击搜索：展开边栏并聚焦搜索框 */
@@ -144,62 +128,62 @@ function openSearchFromCollapsed(): void {
         </a-input>
       </div>
 
-      <!-- 会话列表 -->
+      <!-- 会话列表（置顶组 + 按日期归类：今天/昨天/7天内/更早） -->
       <div class="session-list">
-        <div
-          v-for="session in store.displayedSessions"
-          :key="session.userId"
-          class="session-item"
-          :class="{ active: session.userId === store.activeUserId }"
-          @click="store.selectSession(session.userId)"
-        >
-          <!-- 置顶标记 -->
-          <PushpinFilled v-if="store.pinnedUserIds.includes(session.userId)" class="pin-icon" />
+        <template v-for="group in store.groupedSessions" :key="group.label">
+          <div class="session-group-label">{{ group.label }}</div>
+          <div
+            v-for="session in group.items"
+            :key="session.userId"
+            class="session-item"
+            :class="{ active: session.userId === store.activeUserId }"
+            @click="store.selectSession(session.userId)"
+          >
+            <!-- 置顶标记 -->
+            <PushpinFilled v-if="store.pinnedUserIds.includes(session.userId)" class="pin-icon" />
 
-          <div class="session-main">
-            <div v-if="editingId === session.userId" class="edit-wrap" @click.stop>
-              <a-input
-                v-model:value="editTitle"
-                size="small"
-                @press-enter="confirmRename(session.userId)"
-                @blur="cancelRename"
-              />
+            <div class="session-main">
+              <div v-if="editingId === session.userId" class="edit-wrap" @click.stop>
+                <a-input
+                  v-model:value="editTitle"
+                  size="small"
+                  @press-enter="confirmRename(session.userId)"
+                  @blur="cancelRename"
+                />
+              </div>
+              <div v-else class="session-title">{{ session.title }}</div>
             </div>
-            <template v-else>
-              <div class="session-title">{{ session.title }}</div>
-              <div class="session-preview">{{ session.lastMessage || '开始一段新的旅程...' }}</div>
-            </template>
-          </div>
 
-          <!-- 操作菜单（⋮ 下拉） -->
-          <a-dropdown trigger="click" @click.stop>
-            <button class="more-btn" @click.stop><EllipsisOutlined /></button>
-            <template #overlay>
-              <a-menu>
-                <a-menu-item key="rename" @click.stop="startRename(session.userId, session.title)">
-                  <EditOutlined /><span>重命名</span>
-                </a-menu-item>
-                <a-menu-item
-                  v-if="store.pinnedUserIds.includes(session.userId)"
-                  key="unpin"
-                  @click.stop="store.pinSession(session.userId)"
-                >
-                  <PushpinFilled /><span>取消置顶</span>
-                </a-menu-item>
-                <a-menu-item v-else key="pin" @click.stop="store.pinSession(session.userId)">
-                  <PushpinOutlined /><span>置顶</span>
-                </a-menu-item>
-                <a-menu-item key="share" @click.stop="store.shareSession(session.userId)">
-                  <ShareAltOutlined /><span>分享</span>
-                </a-menu-item>
-                <a-menu-divider />
-                <a-menu-item key="delete" danger @click.stop="handleDelete(session.userId)">
-                  <DeleteOutlined /><span>删除</span>
-                </a-menu-item>
-              </a-menu>
-            </template>
-          </a-dropdown>
-        </div>
+            <!-- 操作菜单（⋮ 下拉） -->
+            <a-dropdown trigger="click" @click.stop>
+              <button class="more-btn" @click.stop><EllipsisOutlined /></button>
+              <template #overlay>
+                <a-menu>
+                  <a-menu-item key="rename" @click.stop="startRename(session.userId, session.title)">
+                    <EditOutlined /><span>重命名</span>
+                  </a-menu-item>
+                  <a-menu-item
+                    v-if="store.pinnedUserIds.includes(session.userId)"
+                    key="unpin"
+                    @click.stop="store.pinSession(session.userId)"
+                  >
+                    <PushpinFilled /><span>取消置顶</span>
+                  </a-menu-item>
+                  <a-menu-item v-else key="pin" @click.stop="store.pinSession(session.userId)">
+                    <PushpinOutlined /><span>置顶</span>
+                  </a-menu-item>
+                  <a-menu-item key="share" @click.stop="store.shareSession(session.userId)">
+                    <ShareAltOutlined /><span>分享</span>
+                  </a-menu-item>
+                  <a-menu-divider />
+                  <a-menu-item key="delete" danger @click.stop="handleDelete(session.userId)">
+                    <DeleteOutlined /><span>删除</span>
+                  </a-menu-item>
+                </a-menu>
+              </template>
+            </a-dropdown>
+          </div>
+        </template>
 
         <div v-if="store.sessions.length === 0" class="empty-sessions">
           <CompassOutlined class="empty-icon" />
@@ -207,96 +191,45 @@ function openSearchFromCollapsed(): void {
         </div>
       </div>
 
-      <!-- 底部设置区：系统设置按钮 -->
+      <!-- 底部设置区：系统设置 + 知识库入口 -->
       <div class="sidebar-footer">
         <button class="footer-btn" @click="showSettingsModal = true">
           <SettingOutlined />
           <span>系统设置</span>
         </button>
+        <button class="footer-btn" @click="goKnowledge">
+          <BookOutlined />
+          <span>知识库</span>
+        </button>
       </div>
 
-      <!-- 系统设置弹窗（DeepSeek 左右分栏布局） -->
+      <!-- 系统设置弹窗（主题设置；知识库管理见独立页） -->
       <a-modal
         v-model:open="showSettingsModal"
         title="系统设置"
         :footer="null"
-        width="680px"
+        width="520px"
         :z-index="1001"
         class="settings-modal-root"
         :body-style="{ padding: 0 }"
       >
-        <div class="settings-layout">
-          <!-- 左侧导航 -->
-          <nav class="settings-nav">
-            <div class="settings-nav-title">系统设置</div>
+        <div class="settings-panel">
+          <div class="panel-title">主题设置</div>
+          <p class="panel-desc">选择适合你的界面主题，设置即时生效。</p>
+          <div class="theme-cards">
             <button
-              class="settings-nav-item"
-              :class="{ active: settingsTab === 'theme' }"
-              @click="settingsTab = 'theme'"
+              v-for="opt in themeModes"
+              :key="opt"
+              class="theme-card"
+              :class="{ active: themeStore.mode === opt }"
+              @click="themeStore.setMode(opt)"
             >
-              <component :is="themeIconMap[themeStore.mode]" :size="18" />
-              <span>主题设置</span>
+              <component :is="themeIconMap[opt]" :size="28" />
+              <span class="theme-card-label">{{ themeLabels[opt] }}</span>
+              <span class="theme-card-desc">
+                {{ opt === 'light' ? '明亮清爽' : opt === 'dark' ? '柔和护眼' : '自动切换' }}
+              </span>
             </button>
-            <button
-              class="settings-nav-item"
-              :class="{ active: settingsTab === 'knowledge' }"
-              @click="settingsTab = 'knowledge'"
-            >
-              <CloudUploadOutlined />
-              <span>知识库管理</span>
-            </button>
-          </nav>
-
-          <!-- 右侧操作面板 -->
-          <div class="settings-panel">
-            <!-- 主题设置面板 -->
-            <template v-if="settingsTab === 'theme'">
-              <div class="panel-title">主题设置</div>
-              <p class="panel-desc">选择适合你的界面主题，设置即时生效。</p>
-              <div class="theme-cards">
-                <button
-                  v-for="opt in themeModes"
-                  :key="opt"
-                  class="theme-card"
-                  :class="{ active: themeStore.mode === opt }"
-                  @click="themeStore.setMode(opt)"
-                >
-                  <component :is="themeIconMap[opt]" :size="28" />
-                  <span class="theme-card-label">{{ themeLabels[opt] }}</span>
-                  <span class="theme-card-desc">
-                    {{ opt === 'light' ? '明亮清爽' : opt === 'dark' ? '柔和护眼' : '自动切换' }}
-                  </span>
-                </button>
-              </div>
-            </template>
-
-            <!-- 知识库面板 -->
-            <template v-else>
-              <div class="panel-title">知识库管理</div>
-              <p class="panel-desc">
-                将文档灌入向量知识库，智能体在回答时自动检索相关内容。支持纯文本，后续扩展 PDF / Word。
-              </p>
-              <div class="knowledge-panel-form">
-                <a-input
-                  v-model:value="knowledgeFilePath"
-                  placeholder="例如：docs/beijing-guide.txt"
-                  :disabled="knowledgeLoading"
-                  size="large"
-                  @press-enter="handleIngest"
-                >
-                  <template #prefix><FileTextOutlined /></template>
-                </a-input>
-                <a-button
-                  type="primary"
-                  size="large"
-                  :loading="knowledgeLoading"
-                  @click="handleIngest"
-                >
-                  <template #icon><CloudUploadOutlined /></template>
-                  开始灌入
-                </a-button>
-              </div>
-            </template>
           </div>
         </div>
       </a-modal>
@@ -459,14 +392,13 @@ function openSearchFromCollapsed(): void {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 2px;
 }
-.session-preview {
-  font-size: 12px;
+.session-group-label {
+  font-size: 11px;
+  font-weight: 600;
   color: var(--app-text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  padding: 10px 10px 4px;
+  letter-spacing: 0.3px;
 }
 .edit-wrap {
   width: 100%;
@@ -567,57 +499,9 @@ function openSearchFromCollapsed(): void {
   padding: 0;
 }
 
-.settings-layout {
-  display: flex;
-  height: 400px;
-}
-
-/* 左侧导航 */
-.settings-nav {
-  width: 180px;
-  flex-shrink: 0;
-  background: var(--app-sider-bg);
-  border-right: 1px solid var(--app-border);
-  padding: 24px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.settings-nav-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--app-text);
-  padding: 0 12px 16px;
-}
-.settings-nav-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--app-text-secondary);
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  text-align: left;
-}
-.settings-nav-item:hover {
-  background: var(--app-hover-bg);
-  color: var(--app-text);
-}
-.settings-nav-item.active {
-  background: var(--app-active-bg);
-  color: var(--app-primary);
-  font-weight: 500;
-}
-
-/* 右侧操作面板 */
+/* 主题设置面板 */
 .settings-panel {
-  flex: 1;
   padding: 28px 32px;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
@@ -669,14 +553,5 @@ function openSearchFromCollapsed(): void {
 .theme-card-desc {
   font-size: 11px;
   color: var(--app-text-muted);
-}
-
-/* 知识库面板表单 */
-.knowledge-panel-form {
-  display: flex;
-  gap: 10px;
-}
-.knowledge-panel-form :deep(.ant-input) {
-  border-radius: 8px;
 }
 </style>
